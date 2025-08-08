@@ -1,0 +1,1 @@
+/usr/bin/c++ -fPIC  -rdynamic -O3 -fPIC -ggdb -std=c++17 -Wall -Wno-deprecated -Werror -Wno-unused-function -Wno-builtin-macro-redefined -Wno-deprecated-declarations -O3 -DNDEBUG -shared -Wl,-soname,libcfl.so -o /root/gameserver/net/lib/libcfl.so CMakeFiles/cfl.dir/cfl/main.cc.o 
