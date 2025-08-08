@@ -6,15 +6,18 @@ set(CMAKE_VERBOSE_MAKEFILE ON)
 if(MSVC)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /W4 /EHsc /std:c++17")
   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /W4 /std:c17")
-else()
+elseif(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND NOT WIN32)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -rdynamic -O3 -fPIC -ggdb -std=c++17 -Wall -Wno-deprecated -Werror -Wno-unused-function -Wno-builtin-macro-redefined -Wno-deprecated-declarations")
   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -rdynamic -O3 -fPIC -ggdb -std=c17 -Wall -Wno-deprecated -Werror -Wno-unused-function -Wno-builtin-macro-redefined -Wno-deprecated-declarations")
+else()
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -ggdb -std=c++17 -Wall -Wno-deprecated -Werror -Wno-unused-function -Wno-builtin-macro-redefined -Wno-deprecated-declarations")
+  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O3 -ggdb -std=c17 -Wall -Wno-deprecated -Werror -Wno-unused-function -Wno-builtin-macro-redefined -Wno-deprecated-declarations")
 endif()
 include(FetchContent)
 include_directories(.)
 # ---------- spdlog 配置 ----------
 set(SPDLOG_INSTALL ON)          # 确保安装时包含 spdlog
-set(SPDLOG_BUILD_SHARED ON)     # 构建动态库（若需静态库则设为 OFF）
+set(SPDLOG_BUILD_SHARED OFF)     # 构建动态库（若需静态库则设为 OFF）
 set(SPDLOG_FMT_EXTERNAL OFF)     # 使用外部 fmt 库（避免内嵌 fmt 冲突）
 
 FetchContent_Declare(
@@ -25,12 +28,12 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(spdlog)  # 自动下载并包含子目录
 # ----------------------------------
 
-set(LIB_SRC 
+set(LIB_SRC
   cfl/main.cc)
 
 add_library(cfl SHARED ${LIB_SRC})
 
-set(LIBS 
+set(LIBS
     cfl
     spdlog::spdlog
 )
