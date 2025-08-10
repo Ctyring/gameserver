@@ -1,0 +1,22 @@
+loggers:
+  - name: "main"
+    async: true
+    queue_size: 8192
+    thread_count: 1
+    overflow_policy: block
+    level: info
+    pattern: "[%H:%M:%S %z] [%^%l%$] %v"
+    sinks:
+      - type: console
+        color: true
+      - type: file
+        path: "logs/main.log"
+        truncate: false
+
+  - name: "audit"
+    async: false
+    level: warn
+    sinks:
+      - type: file
+        path: "logs/audit.log"
+        truncate: true
