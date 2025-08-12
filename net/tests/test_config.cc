@@ -4,21 +4,21 @@
 
 int main() {
     // 初始化日志系统，加载 config.yaml
-    Config::InitLogging("configs/config.yaml");
-
+    cfl::Config::Init();
     // 获取默认 logger，默认是第一个配置的 logger
     auto default_logger = spdlog::default_logger();
 
     default_logger->info("This is an info message from the default logger.");
     default_logger->debug("This debug message might be hidden if level > debug.");
+    default_logger->warn("This is an warn message from the default logger.");
 
     // 获取第二个 logger，名字叫 "audit"
-    auto audit_logger = spdlog::get("audit");
+    auto audit_logger = spdlog::get("main");
     if (audit_logger) {
         audit_logger->warn("Audit logger warning message.");
         audit_logger->error("Audit logger error message.");
     } else {
-        std::cerr << "Failed to get 'audit' logger." << std::endl;
+        std::cerr << "Failed to get 'main' logger." << std::endl;
     }
 
     // 演示异步 logger日志 (假设第一个 logger 是异步)

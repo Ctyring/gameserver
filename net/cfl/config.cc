@@ -1,15 +1,14 @@
 #include "config.h"
 #include <iostream>
-#include <vector>
-#include <memory>
 #include <algorithm>
 
-// yaml-cpp
-#include <yaml-cpp/yaml.h>
+namespace cfl {
 
-namespace Config {
+    void Config::Init() {
+        InitLogging("configs/config.yaml");
+    }
 
-    spdlog::level::level_enum LevelFromString(const std::string &level_str) {
+    spdlog::level::level_enum Config::LevelFromString(const std::string &level_str) {
         std::string lvl = level_str;
         std::transform(lvl.begin(), lvl.end(), lvl.begin(), ::tolower);
         if (lvl == "trace") return spdlog::level::trace;
@@ -21,7 +20,16 @@ namespace Config {
         return spdlog::level::off;
     }
 
-    static std::vector<spdlog::sink_ptr> CreateSinks(const YAML::Node &sinks_cfg) {
+    spdlog::async_overflow_policy Config::AsyncOverflowPolicyFromString(const std::string &policy_str) {
+        std::string p = policy_str;
+        std::transform(p.begin(), p.end(), p.begin(), ::tolower);
+        if (p == "block") return spdlog::async_overflow_policy::block;
+        if (p == "overrun_oldest") return spdlog::async_overflow_policy::overrun_oldest;
+        if (p == "discard_new") return spdlog::async_overflow_policy::discard_new;
+        return spdlog::async_overflow_policy::block;
+    }
+
+    std::vector<spdlog::sink_ptr> Config::CreateSinks(const YAML::Node &sinks_cfg) {
         std::vector<spdlog::sink_ptr> sinks;
         if (!sinks_cfg) return sinks;
 
@@ -42,7 +50,8 @@ namespace Config {
         return sinks;
     }
 
-    void InitLogging(const std::string &yaml_path) {
+    void Config::InitLogging(const std::string &yaml_path) {
+//        std::cout << "开始初始化logger" << std::endl;
         try {
             YAML::Node config = YAML::LoadFile(yaml_path);
             if (!config["loggers"]) {
@@ -92,7 +101,8 @@ namespace Config {
                     spdlog::set_default_logger(logger);
                     first_logger_set_default = true;
                 }
-//                spdlog::flush_on(spdlog::level::info);
+
+//                std::cout << "Initialized logger: " << name << std::endl;
             }
 
         } catch (const std::exception &ex) {
@@ -100,13 +110,4 @@ namespace Config {
         }
     }
 
-    spdlog::async_overflow_policy AsyncOverflowPolicyFromString(const std::string &policy_str) {
-        std::string p = policy_str;
-        std::transform(p.begin(), p.end(), p.begin(), ::tolower);
-        if (p == "block") return spdlog::async_overflow_policy::block;
-        if (p == "overrun_oldest") return spdlog::async_overflow_policy::overrun_oldest;
-        if (p == "discard_new") return spdlog::async_overflow_policy::discard_new;
-        // 榛樿杩斿洖闃诲绛栫暐
-        return spdlog::async_overflow_policy::block;
-    }
-} // namespace Config
+} // namespace cfl

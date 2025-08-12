@@ -56,7 +56,6 @@ FetchContent_MakeAvailable(spdlog yaml-cpp)
 
 # ---------- 源文件 ----------
 set(LIB_SRC
-        cfl/main.cc
         cfl/config.cc
 )
 

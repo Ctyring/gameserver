@@ -1,21 +1,27 @@
 #pragma once
 #include <string>
-#include "cfl.h"
 #include <spdlog/spdlog.h>
 #include <yaml-cpp/yaml.h>
+#include <vector>
+#include <memory>
 
-// spdlog 的额外头文件
-#include <spdlog/spdlog.h>
 #include <spdlog/async.h>
 #include <spdlog/sinks/stdout_color_sinks.h>
 #include <spdlog/sinks/stdout_sinks.h>
 #include <spdlog/sinks/basic_file_sink.h>
 
-namespace Config {
-    // 从 YAML 配置初始化 spdlog
-    void InitLogging(const std::string &yaml_path);
+namespace cfl {
 
-    spdlog::async_overflow_policy AsyncOverflowPolicyFromString(const std::string &policy_str);
-    // 将字符串转为 spdlog 日志级别
-    spdlog::level::level_enum LevelFromString(const std::string &level_str);
-}
+    class Config {
+    public:
+        static void Init();
+        static spdlog::level::level_enum LevelFromString(const std::string &level_str);
+        static spdlog::async_overflow_policy AsyncOverflowPolicyFromString(const std::string &policy_str);
+        static void InitLogging(const std::string &yaml_path);
+
+    private:
+        Config() = default;
+        static std::vector<spdlog::sink_ptr> CreateSinks(const YAML::Node &sinks_cfg);
+    };
+
+} // namespace cfl
