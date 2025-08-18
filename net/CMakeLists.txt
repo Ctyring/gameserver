@@ -82,7 +82,7 @@ target_link_libraries(cfl
 )
 
 if (WIN32)
-    target_link_libraries(cfl PUBLIC ws2_32)
+    target_link_libraries(cfl PUBLIC ws2_32 mswsock)
 endif ()
 
 # 暴露 include 路径
@@ -100,6 +100,7 @@ set(TEST_TARGETS
         test_asio
         test_asio_tcp
         test_asio_udp
+        test_asio_async
 )
 
 # 循环添加可执行文件与链接库
