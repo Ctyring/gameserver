@@ -15,13 +15,13 @@ elseif (CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND NOT WIN32)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -rdynamic -O3 -fPIC -ggdb -std=c++20 -Wall -Wno-deprecated -Werror -Wno-unused-function -Wno-builtin-macro-redefined -Wno-deprecated-declarations")
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -rdynamic -O3 -fPIC -ggdb -std=c20 -Wall -Wno-deprecated -Werror -Wno-unused-function -Wno-builtin-macro-redefined -Wno-deprecated-declarations")
 else ()
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -ggdb -std=c++20 -Wall -Wno-deprecated -Werror -Wno-unused-function -Wno-builtin-macro-redefined -Wno-deprecated-declarations")
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O3 -ggdb -std=c20 -Wall -Wno-deprecated -Werror -Wno-unused-function -Wno-builtin-macro-redefined -Wno-deprecated-declarations")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -ggdb -std=c++20 -Wall -Wno-deprecated -Wno-unused-function -Wno-builtin-macro-redefined -Wno-deprecated-declarations -Wno-unknown-pragmas")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O3 -ggdb -std=c20 -Wall -Wno-deprecated -Wno-unused-function -Wno-builtin-macro-redefined -Wno-deprecated-declarations -Wno-unknown-pragmas")
 endif ()
 
 if (WIN32)
     add_compile_definitions(_WIN32_WINNT=0x0A00)
-endif()
+endif ()
 
 # 启用 FetchContent（下载第三方依赖）
 include(FetchContent)
@@ -59,12 +59,18 @@ FetchContent_Declare(
 FetchContent_Declare(
         asio
         GIT_REPOSITORY https://github.com/chriskohlhoff/asio.git
-        GIT_TAG        asio-1-30-2   # 最新稳定版
+        GIT_TAG asio-1-30-2   # 最新稳定版
 )
 
-# 下载并添加 spdlog / yaml-cpp
-FetchContent_MakeAvailable(spdlog yaml-cpp asio)
+# ---------- Abseil 配置 ----------
+FetchContent_Declare(
+        abseil
+        GIT_REPOSITORY https://github.com/abseil/abseil-cpp.git
+        GIT_TAG 20230802.2  # 或指定某个版本号
+)
 
+# 下载并添加
+FetchContent_MakeAvailable(spdlog yaml-cpp asio abseil)
 # ---------- 源文件 ----------
 set(LIB_SRC
         cfl/config.cc
@@ -79,6 +85,7 @@ target_link_libraries(cfl
         PUBLIC
         spdlog::spdlog
         yaml-cpp
+        absl::flat_hash_map # 哈希表
 )
 
 if (WIN32)
@@ -101,13 +108,16 @@ set(TEST_TARGETS
         test_asio_tcp
         test_asio_udp
         test_asio_async
+        test_ssm_creator
+        test_ssm_attacher
+        test_abseil
 )
 
 # 循环添加可执行文件与链接库
-foreach(target_name IN LISTS TEST_TARGETS)
+foreach (target_name IN LISTS TEST_TARGETS)
     add_executable(${target_name} tests/${target_name}.cc)
     target_link_libraries(${target_name} PRIVATE cfl)
-endforeach()
+endforeach ()
 # ---------- 输出目录 ----------
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
@@ -116,20 +126,20 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 # $<TARGET_RUNTIME_DLLS:target> 会收集 target 的所有运行时 DLL
 # COMMAND_EXPAND_LISTS 让 cmake -E copy_if_different 能接受 DLL 列表
 if (WIN32)
-    foreach(EXE_TARGET IN LISTS TEST_TARGETS)
+    foreach (EXE_TARGET IN LISTS TEST_TARGETS)
         add_custom_command(TARGET ${EXE_TARGET} POST_BUILD
                 COMMAND ${CMAKE_COMMAND} -E copy_if_different
                 $<TARGET_RUNTIME_DLLS:${EXE_TARGET}> $<TARGET_FILE_DIR:${EXE_TARGET}>
                 COMMAND_EXPAND_LISTS
         )
-    endforeach()
-endif()
+    endforeach ()
+endif ()
 
 # ------------------- 复制配置文件 ---------------------------------
-foreach(EXE_TARGET IN LISTS TEST_TARGETS)
+foreach (EXE_TARGET IN LISTS TEST_TARGETS)
     add_custom_command(TARGET ${EXE_TARGET} POST_BUILD
             COMMAND ${CMAKE_COMMAND} -E copy_directory
             ${CMAKE_SOURCE_DIR}/configs
             $<TARGET_FILE_DIR:${EXE_TARGET}>/configs
     )
-endforeach()
+endforeach ()
