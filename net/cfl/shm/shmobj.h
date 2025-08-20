@@ -4,7 +4,7 @@
 #include <atomic>
 #include <string_view>
 
-namespace shm {
+namespace cfl::shm {
 
     /**
      * @enum ObjectState
@@ -119,7 +119,7 @@ namespace shm {
          * @brief 获取对象的检查码。
          * @return 检查码 (int32_t)。
          */
-        [[nodiscard]] std::int32_t check_code() const noexcept {
+        [[nodiscard]] std::size_t check_code() const noexcept {
             return check_code_;
         }
 
@@ -127,7 +127,7 @@ namespace shm {
          * @brief 设置对象的检查码。
          * @param code 新的检查码。
          */
-        void set_check_code(std::int32_t code) noexcept {
+        void set_check_code(std::size_t code) noexcept {
             check_code_ = code;
         }
 
@@ -141,7 +141,7 @@ namespace shm {
             last_update_ = std::chrono::system_clock::now();
         }
 
-        std::int32_t check_code_;   ///< 对象的检查码，用于完整性校验
+        std::size_t check_code_;   ///< 对象的检查码，用于完整性校验
         std::atomic<ObjectState> state_;  ///< 对象的生命周期状态，使用原子类型保证线程安全
         std::chrono::system_clock::time_point last_update_; ///< 最近一次状态更新的时间点
     };

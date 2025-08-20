@@ -1,36 +1,41 @@
-#include "cfl/shm/shm.h"
 #include <iostream>
-#include <string>
+#include <thread>
+#include <chrono>
+#include "cfl/shm/shmpage.h"
+#include "cfl/shm/shmobj.h"
+
+using namespace cfl::shm;
 
 int main() {
-    constexpr std::int32_t moduleId = 1;
-    constexpr std::int32_t page = 1;
-    constexpr std::int32_t size = 1024;
+    std::cout << "[Creator] Starting creator process..." << std::endl;
 
-    auto shmHandleOpt = cfl::shm::CreateShareMemory(moduleId, page, size);
-    if (!shmHandleOpt) {
-        std::cerr << "Failed to create shared memory (already exists?)" << std::endl;
+    // 创建共享内存管理器
+    SharedMemoryManager manager(
+            1001,           // module_id
+            256,            // raw_block_size
+            8,              // blocks_per_page
+            false           // attach_only = false, 表示创建
+    );
+
+    // 分配一个对象
+    auto obj_opt = manager.allocate_object(true);
+    if (!obj_opt.has_value()) {
+        std::cerr << "[Creator] Failed to allocate object!" << std::endl;
         return 1;
     }
 
-    HANDLE shmHandle = *shmHandleOpt;
+    SharedObject* obj = obj_opt.value();
+    obj->set_check_code(12345);
+    obj->use();
 
-    // 映射共享内存
-    void* pMem = MapViewOfFile(shmHandle, FILE_MAP_ALL_ACCESS, 0, 0, size);
-    if (!pMem) {
-        std::cerr << "MapViewOfFile failed: " << GetLastError() << std::endl;
-        CloseHandle(shmHandle);
-        return 1;
-    }
+    std::cout << "[Creator] Object allocated at " << obj
+              << " check_code = " << obj->check_code()
+              << " state = " << static_cast<int>(obj->state())
+              << std::endl;
 
-    std::string message = "Hello from creator!";
-    memcpy(pMem, message.c_str(), message.size() + 1);
+    std::cout << "[Creator] Sleeping, waiting for attacher to attach..." << std::endl;
+    std::this_thread::sleep_for(std::chrono::seconds(30));
 
-    std::cout << "Creator wrote: " << message << std::endl;
-    std::cout << "Press Enter to exit (memory will remain until system restart)" << std::endl;
-    std::cin.get();
-
-    UnmapViewOfFile(pMem);
-    CloseHandle(shmHandle);
+    std::cout << "[Creator] Done." << std::endl;
     return 0;
 }

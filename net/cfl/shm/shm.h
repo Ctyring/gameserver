@@ -1,4 +1,5 @@
 #pragma once
+
 #include <string>
 #include <optional>
 #include <cstdint>
@@ -7,11 +8,13 @@
 #include <format>
 
 #if defined(_WIN32)
+
 #include <windows.h>
+
 #else
 #include <sys/ipc.h>
-    #include <sys/shm.h>
-    #include <cerrno>
+#include <sys/shm.h>
+#include <cerrno>
 #endif
 
 namespace cfl::shm {
@@ -23,7 +26,7 @@ namespace cfl::shm {
 #endif
 
     /// 创建共享内存
-    inline std::optional<ShmHandle> CreateShareMemory(std::int32_t moduleId, std::int32_t page, std::int32_t size) {
+    inline std::optional<ShmHandle> CreateShareMemory(std::size_t moduleId, std::size_t page, std::size_t size) {
 #if defined(_WIN32)
         auto name = std::format("SM_{}", (moduleId << 16) | page);
         HANDLE hShare = CreateFileMappingA(
@@ -53,7 +56,7 @@ namespace cfl::shm {
     }
 
     /// 打开共享内存
-    inline std::optional<ShmHandle> OpenShareMemory(std::int32_t moduleId, std::int32_t page) {
+    inline std::optional<ShmHandle> OpenShareMemory(std::size_t moduleId, std::size_t page) {
 #if defined(_WIN32)
         auto name = std::format("SM_{}", (moduleId << 16) | page);
         HANDLE hShare = OpenFileMappingA(FILE_MAP_READ | FILE_MAP_WRITE, FALSE, name.c_str());
@@ -72,17 +75,32 @@ namespace cfl::shm {
     }
 
     // 根据句柄获取共享内存地址
-    char* GetShareMemory(std::optional<ShmHandle> hShm)
-    {
+    inline char *GetShareMemory(std::optional<ShmHandle> hShm) {
         if (!hShm.has_value()) {
             return nullptr;
         }
 #ifdef WIN32
-        char* pdata = (char*)MapViewOfFile(hShm.value(), FILE_MAP_READ | FILE_MAP_WRITE, 0, 0, 0);
+        char *pdata = (char *) MapViewOfFile(hShm.value(), FILE_MAP_READ | FILE_MAP_WRITE, 0, 0, 0);
 #else
         char* pdata = (char*)shmat(hShm.value(), (void*)0, 0);
 #endif
         return pdata;
+    }
+
+    bool ReleaseShareMemory(char *pMem) {
+#ifdef WIN32
+        return UnmapViewOfFile(pMem);
+#else
+        return (0 == shmdt(pMem));
+#endif
+    }
+
+    bool CloseShareMemory(std::optional<ShmHandle> hShm) {
+#ifdef WIN32
+        return CloseHandle(hShm.value());
+#else
+        return (0 == shmctl(hShm, IPC_RMID, 0));
+#endif
     }
 
 } // namespace cfl::shm

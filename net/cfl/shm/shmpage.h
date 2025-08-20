@@ -12,6 +12,7 @@
 #include <format>
 #include <unordered_map>
 #include "shm.h"
+#include "shmobj.h"
 
 #if defined(_WIN32)
 
@@ -28,7 +29,7 @@ namespace cfl::shm {
 
 /// @brief 每个共享内存块的元信息
     struct MemoryBlockHeader {
-        std::int32_t index = 0;        ///< 数据块编号
+        std::size_t index = 0;        ///< 数据块编号
         bool in_use = false;           ///< 是否正在使用
         bool is_new = false;           ///< 是否是新创建的块
         std::time_t before_time = 0;   ///< DS 服务器写入前的时间戳
@@ -51,40 +52,42 @@ namespace cfl::shm {
         /// @param raw_block_size 每个原始块大小
         /// @param blocks_per_page 每页块数
         /// @param attach_only 如果为 true 则附加到已有共享内存，否则新建
-        explicit SharedMemoryManager(std::int32_t module_id,
-                            std::int32_t raw_block_size,
-                            std::int32_t blocks_per_page,
-                            bool attach_only = false);
+        explicit SharedMemoryManager(std::size_t module_id,
+                                     std::size_t raw_block_size,
+                                     std::size_t blocks_per_page,
+                                     bool attach_only = false);
 
         /// @brief 构造函数：直接从已有数据区域管理
-//    SharedMemoryManager(std::int32_t raw_block_size,
+//    SharedMemoryManager(std::size_t raw_block_size,
 //                        char* base_addr,
-//                        std::int32_t length);
+//                        std::size_t length);
 
-        virtual ~SharedMemoryManager();
+        ~SharedMemoryManager();
 
     protected:
         using PageList = std::vector<SharedMemoryPage>;
 
         PageList pages_;            ///< 内存页集合
-        std::int32_t blocks_per_page_;  ///< 每页容纳的块数
-        std::int32_t page_count_;       ///< 页数量
-        std::int32_t total_blocks_;     ///< 总块数
-        std::int32_t block_size_;       ///< 每块字节大小
-        std::int32_t raw_block_size_;   ///< 原始块大小（未对齐）
-        std::int32_t module_id_;        ///< 模块编号
+        std::size_t blocks_per_page_;  ///< 每页容纳的块数
+        std::size_t page_count_;       ///< 页数量
+        std::size_t total_blocks_;     ///< 总块数
+        std::size_t block_size_;       ///< 每块字节大小
+        std::size_t raw_block_size_;   ///< 原始块大小（未对齐）
+        std::size_t module_id_;        ///< 模块编号
         bool empty_created_;    ///< 是否首次创建
 
+        using BlockRef = std::reference_wrapper<MemoryBlockHeader>;
+
         /// 映射表：所有块头
-        using BlockMap = std::unordered_map<std::int32_t, MemoryBlockHeader *>;
+        using BlockMap = std::unordered_map<std::size_t, BlockRef>;
         BlockMap block_map_;
 
         /// 映射表：已使用块
-        using UsedBlockMap = std::unordered_map<void *, MemoryBlockHeader *>;
+        using UsedBlockMap = std::unordered_map<void *, BlockRef>;
         UsedBlockMap used_blocks_;
 
         /// 映射表：空闲块
-        using FreeBlockMap = std::unordered_map<std::int32_t, MemoryBlockHeader *>;
+        using FreeBlockMap = std::unordered_map<std::size_t, BlockRef>;
         FreeBlockMap free_blocks_;
 
     private:
@@ -105,50 +108,37 @@ namespace cfl::shm {
         void import_existing_pages();
 
         /// @brief 获取总块数
-        std::int32_t total_count() const noexcept { return total_blocks_; }
+        std::size_t total_count() const noexcept { return total_blocks_; }
 
         /// @brief 获取空闲块数量
-        std::int32_t free_count() const noexcept { return static_cast<std::int32_t>(free_blocks_.size()); }
+        std::size_t free_count() const noexcept { return static_cast<std::size_t>(free_blocks_.size()); }
 
         /// @brief 获取已使用块数量
-        std::int32_t used_count() const noexcept { return static_cast<std::int32_t>(used_blocks_.size()); }
+        std::size_t used_count() const noexcept { return static_cast<std::size_t>(used_blocks_.size()); }
 
         /// @brief 通过索引获取块头
-        virtual MemoryBlockHeader *get_block_header(std::int32_t index);
+        MemoryBlockHeader *get_block_header(std::size_t index);
 
         /// @brief 通过索引获取对象指针
-        virtual class SharedObject *get_object(std::int32_t index);
+        SharedObject *get_object(std::size_t index);
 
         /// @brief 获取原始块大小
-        std::int32_t raw_block_size() const noexcept { return raw_block_size_; }
+        std::size_t raw_block_size() const noexcept { return raw_block_size_; }
 
         /// @brief 获取对齐后的块大小
-        std::int32_t aligned_block_size() const noexcept { return block_size_; }
+        std::size_t aligned_block_size() const noexcept { return block_size_; }
 
         /// @brief 处理已用区块中被释放的数据
         void clean_dirty_blocks();
 
         /// @brief 分配一个新对象
         /// @param new_block 是否标记为新建
-        virtual SharedObject *allocate_object(bool new_block = false);
+        std::optional<SharedObject *> allocate_object(bool new_block = false);
 
         /// @brief 释放一个对象
-        virtual bool destroy_object(SharedObject *obj);
+        bool destroy_object(SharedObject *obj);
 
         /// @brief 获取已使用数据块映射
         UsedBlockMap &used_blocks() noexcept { return used_blocks_; }
-    };
-
-/// @brief 共享内存中的对象基类
-/// @details 所有存入共享内存的对象必须继承该类
-    class SharedObject {
-    public:
-        virtual ~SharedObject() = default;
-
-        /// @brief 当分配时调用（相当于构造逻辑）
-        virtual void on_create() {}
-
-        /// @brief 当释放时调用（相当于析构逻辑）
-        virtual void on_destroy() {}
     };
 }

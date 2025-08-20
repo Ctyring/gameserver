@@ -74,6 +74,7 @@ FetchContent_MakeAvailable(spdlog yaml-cpp asio abseil)
 # ---------- 源文件 ----------
 set(LIB_SRC
         cfl/config.cc
+        cfl/shm/shmpage.cc
 )
 
 # ---------- 构建 cfl 共享库 ----------
