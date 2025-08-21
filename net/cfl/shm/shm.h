@@ -99,7 +99,7 @@ namespace cfl::shm {
 #ifdef WIN32
         return CloseHandle(hShm.value());
 #else
-        return (0 == shmctl(hShm, IPC_RMID, 0));
+        return (0 == shmctl(hShm.value(), IPC_RMID, 0));
 #endif
     }
 

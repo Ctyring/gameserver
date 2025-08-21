@@ -1,6 +1,7 @@
 #include "shmpage.h"
-
+#include <cstring>
 #define BLOCK_CHECK_CODE    0x5A
+#define INVALID_HANDLE_VALUE (-1)
 using namespace cfl::shm;
 
 SharedMemoryManager::SharedMemoryManager(std::size_t module_id, std::size_t raw_block_size,

@@ -26,6 +26,7 @@ _build/
 *.idb
 *.lib
 *.a
+bin/
 
 # ====================
 # Visual Studio
@@ -69,3 +70,8 @@ cmake-build-*/
 # ====================
 *.code-workspace
 *.directory
+
+# ====================
+# 依赖
+# ====================
+third_party/

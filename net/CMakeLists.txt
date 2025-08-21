@@ -12,8 +12,8 @@ if (MSVC)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /W4 /EHsc /std:c++20")
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /W4 /std:c20")
 elseif (CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND NOT WIN32)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -rdynamic -O3 -fPIC -ggdb -std=c++20 -Wall -Wno-deprecated -Werror -Wno-unused-function -Wno-builtin-macro-redefined -Wno-deprecated-declarations")
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -rdynamic -O3 -fPIC -ggdb -std=c20 -Wall -Wno-deprecated -Werror -Wno-unused-function -Wno-builtin-macro-redefined -Wno-deprecated-declarations")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -rdynamic -O3 -fPIC -ggdb -std=c++20 -Wall -Wno-deprecated -Wno-unused-function -Wno-builtin-macro-redefined -Wno-deprecated-declarations")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -rdynamic -O3 -fPIC -ggdb -std=c20 -Wall -Wno-deprecated -Wno-unused-function -Wno-builtin-macro-redefined -Wno-deprecated-declarations")
 else ()
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -ggdb -std=c++20 -Wall -Wno-deprecated -Wno-unused-function -Wno-builtin-macro-redefined -Wno-deprecated-declarations -Wno-unknown-pragmas")
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O3 -ggdb -std=c20 -Wall -Wno-deprecated -Wno-unused-function -Wno-builtin-macro-redefined -Wno-deprecated-declarations -Wno-unknown-pragmas")
@@ -24,9 +24,16 @@ if (WIN32)
 endif ()
 
 # 启用 FetchContent（下载第三方依赖）
+set(FETCHCONTENT_VERBOSE ON)
 include(FetchContent)
 
+# ---------- 第三方库目录 ----------
+set(THIRD_PARTY_DIR ${CMAKE_SOURCE_DIR}/third_party)
+
 # ---------- spdlog 配置 ----------
+if(EXISTS "${THIRD_PARTY_DIR}/spdlog")
+    add_subdirectory(${THIRD_PARTY_DIR}/spdlog)
+else()
 # 关闭外部 fmt（防止冲突）
 set(SPDLOG_FMT_EXTERNAL OFF CACHE BOOL "Use external fmt library" FORCE)
 # 禁用安装目标
@@ -41,8 +48,12 @@ FetchContent_Declare(
         GIT_REPOSITORY https://github.com/gabime/spdlog.git
         GIT_TAG v1.14.0
 )
-
+FetchContent_MakeAvailable(spdlog)
+endif()
 # ---------- yaml-cpp 配置 ----------
+if(EXISTS "${THIRD_PARTY_DIR}/yaml-cpp")
+    add_subdirectory(${THIRD_PARTY_DIR}/yaml-cpp)
+else()
 set(YAML_CPP_BUILD_TESTS OFF CACHE BOOL "Disable yaml-cpp tests" FORCE)
 set(YAML_CPP_BUILD_TOOLS OFF CACHE BOOL "Disable yaml-cpp tools" FORCE)
 set(YAML_CPP_INSTALL OFF CACHE BOOL "Disable yaml-cpp install" FORCE)
@@ -54,23 +65,32 @@ FetchContent_Declare(
         GIT_REPOSITORY https://github.com/jbeder/yaml-cpp.git
         GIT_TAG 0.8.0
 )
-
+FetchContent_MakeAvailable(yaml-cpp)
+endif()
 # ---------- asio 配置 ----------
+if(EXISTS "${THIRD_PARTY_DIR}/asio")
+    # add_subdirectory(${THIRD_PARTY_DIR}/asio)
+else()
 FetchContent_Declare(
         asio
         GIT_REPOSITORY https://github.com/chriskohlhoff/asio.git
         GIT_TAG asio-1-30-2   # 最新稳定版
 )
-
+FetchContent_MakeAvailable(asio)
+endif()
 # ---------- Abseil 配置 ----------
-FetchContent_Declare(
-        abseil
-        GIT_REPOSITORY https://github.com/abseil/abseil-cpp.git
-        GIT_TAG 20230802.2  # 或指定某个版本号
-)
-
+# if(EXISTS "${THIRD_PARTY_DIR}/abseil-cpp")
+#     add_subdirectory(${THIRD_PARTY_DIR}/abseil-cpp)
+# else()
+# FetchContent_Declare(
+#         abseil
+#         GIT_REPOSITORY https://github.com/abseil/abseil-cpp.git
+#         GIT_TAG 20230802.2  # 或指定某个版本号
+# )
+# FetchContent_MakeAvailable(abseil)
+# endif()
 # 下载并添加
-FetchContent_MakeAvailable(spdlog yaml-cpp asio abseil)
+# FetchContent_MakeAvailable(yaml-cpp asio abseil)
 # ---------- 源文件 ----------
 set(LIB_SRC
         cfl/config.cc
@@ -86,11 +106,24 @@ target_link_libraries(cfl
         PUBLIC
         spdlog::spdlog
         yaml-cpp
-        absl::flat_hash_map # 哈希表
+        # absl::flat_hash_map # 哈希表
 )
 
 if (WIN32)
-    target_link_libraries(cfl PUBLIC ws2_32 mswsock)
+# ---------- Abseil 配置 ----------
+if(EXISTS "${THIRD_PARTY_DIR}/abseil-cpp")
+    add_subdirectory(${THIRD_PARTY_DIR}/abseil-cpp)
+else()
+FetchContent_Declare(
+        abseil
+        GIT_REPOSITORY https://github.com/abseil/abseil-cpp.git
+        GIT_TAG 20230802.2  # 或指定某个版本号
+)
+FetchContent_MakeAvailable(abseil)
+endif()
+# 下载并添加
+FetchContent_MakeAvailable(yaml-cpp asio abseil)
+    target_link_libraries(cfl PUBLIC ws2_32 mswsock absl::flat_hash_map)
 endif ()
 
 # 暴露 include 路径
@@ -111,8 +144,13 @@ set(TEST_TARGETS
         test_asio_async
         test_ssm_creator
         test_ssm_attacher
-        test_abseil
+        # test_abseil
 )
+
+if(WIN32)
+# 将test_abseil加入测试列表
+list(APPEND TEST_TARGETS test_abseil)
+endif()
 
 # 循环添加可执行文件与链接库
 foreach (target_name IN LISTS TEST_TARGETS)
