@@ -44,6 +44,7 @@ set(LIB_SRC
         cfl/config.cc
         cfl/shm/shmpage.cc
         cfl/shm/shmpool.cc
+        cfl/db/db_mysql.cc
 )
 
 add_library(cfl SHARED ${LIB_SRC})

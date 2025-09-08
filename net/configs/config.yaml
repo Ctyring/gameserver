@@ -22,7 +22,7 @@
 # %% 输出百分号   %o 日志顺序号   %i 日志ID(每logger独立)
 # %p 进程名（部分平台支持）
 loggers:
-  - name: "main"
+  - name: "sys"
     async: true
     queue_size: 8192
     thread_count: 1

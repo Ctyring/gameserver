@@ -1,11 +1,18 @@
 #include "config.h"
 #include <iostream>
 #include <algorithm>
-
+#include <filesystem>
+#include "cfl/cfl.h"
 namespace cfl {
+    YAML::Node cfl::Config::game_info_;
+    std::unordered_map<std::string, std::string> cfl::Config::db_params_;
 
     void Config::Init() {
+//        spdlog::info("Current path: {}", std::filesystem::current_path().string());
+
         InitLogging("configs/config.yaml");
+        InitGameInfo("configs/game_info.yaml");
+        InitMysqlInfo("configs/mysql.yaml");
     }
 
     spdlog::level::level_enum Config::LevelFromString(const std::string &level_str) {
@@ -51,17 +58,16 @@ namespace cfl {
     }
 
     void Config::InitLogging(const std::string &yaml_path) {
-//        std::cout << "¿ªÊ¼³õÊ¼»¯logger" << std::endl;
         try {
             YAML::Node config = YAML::LoadFile(yaml_path);
             if (!config["loggers"]) {
-                std::cerr << "YAML config missing 'loggers' section" << std::endl;
+                spdlog::error("YAML config missing 'loggers' section");
                 return;
             }
 
             const YAML::Node &loggers_cfg = config["loggers"];
             if (!loggers_cfg.IsSequence() || loggers_cfg.size() == 0) {
-                std::cerr << "'loggers' should be a non-empty sequence" << std::endl;
+                spdlog::error("'loggers' should be a non-empty sequence");
                 return;
             }
 
@@ -101,12 +107,46 @@ namespace cfl {
                     spdlog::set_default_logger(logger);
                     first_logger_set_default = true;
                 }
-
-//                std::cout << "Initialized logger: " << name << std::endl;
             }
 
         } catch (const std::exception &ex) {
-            std::cerr << "Failed to initialize logging: " << ex.what() << std::endl;
+            spdlog::error("Failed to initialize logging: {}", ex.what());
+        }
+    }
+
+    void Config::InitGameInfo(const std::string &yaml_path) {
+        try {
+            game_info_ = YAML::LoadFile(yaml_path);
+        } catch (const std::exception &ex) {
+            spdlog::error("Failed to initialize game info: {}", ex.what());
+        }
+    }
+
+    void Config::InitMysqlInfo(const std::string &yaml_path) {
+        namespace fs = std::filesystem;
+        if (!fs::exists(yaml_path)) {
+            spdlog::info("Config file not found: {}, skip loading.", yaml_path);
+            return;
+        }
+
+        try {
+            YAML::Node node = YAML::LoadFile(yaml_path);
+            db_params_.clear();
+
+            // éåŽ† YAML çš„ key-value
+            for (auto it = node.begin(); it != node.end(); ++it) {
+                auto key = it->first.as<std::string>();
+                auto value = it->second.as<std::string>();
+                db_params_[key] = value;
+            }
+
+            spdlog::info("MySQL config loaded: {}", yaml_path);
+            for (const auto &kv : db_params_) {
+                spdlog::info("  {} = {}", kv.first, kv.second);
+            }
+
+        } catch (const std::exception &ex) {
+            spdlog::error("Failed to initialize mysql info from {}: {}", yaml_path, ex.what());
         }
     }
 
