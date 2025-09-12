@@ -10,7 +10,7 @@ int main() {
     std::cout << "[Attacher] Starting attacher process..." << std::endl;
 
     // 附加到共享内存
-    SharedMemoryManager manager(
+    SharedMemoryManagerBase manager(
             1001,           // module_id
             256,            // raw_block_size
             8,              // blocks_per_page

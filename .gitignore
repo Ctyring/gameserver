@@ -27,7 +27,8 @@ _build/
 *.lib
 *.a
 bin/
-
+/net/bin
+/net/lib
 # ====================
 # Visual Studio
 # ====================
@@ -75,4 +76,3 @@ cmake-build-*/
 # 依赖
 # ====================
 third_party/
-/net/bin

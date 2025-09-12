@@ -3,6 +3,7 @@
 #include <spdlog/spdlog.h>
 #include <yaml-cpp/yaml.h>
 #include "cfl/shm/shmobj.h"
+#include "cfl/tools/common.h"
 #include <cstddef>       // for std::size_t
 #include <cstdint>       // for uint32_t 等
 #include "config.h"

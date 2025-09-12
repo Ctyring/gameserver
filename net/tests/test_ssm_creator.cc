@@ -10,7 +10,7 @@ int main() {
     std::cout << "[Creator] Starting creator process..." << std::endl;
 
     // 创建共享内存管理器
-    SharedMemoryManager manager(
+    SharedMemoryManagerBase manager(
             1001,           // module_id
             256,            // raw_block_size
             8,              // blocks_per_page
@@ -25,7 +25,7 @@ int main() {
     }
 
     SharedObject* obj = obj_opt.value();
-    obj->set_check_code(12345);
+    obj->set_check_code(66666);
     obj->use();
 
     std::cout << "[Creator] Object allocated at " << obj

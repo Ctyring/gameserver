@@ -1,11 +1,28 @@
 #include "shmpage.h"
 #include <cstring>
-#define BLOCK_CHECK_CODE    0x5A
+#include <span>
+#define BLOCK_CHECK_CODE 0x5A
+
+#ifndef _WIN32
+/// @brief Linux/Unix 下定义 INVALID_HANDLE_VALUE
 #define INVALID_HANDLE_VALUE (-1)
+#endif
+
 using namespace cfl::shm;
 
-SharedMemoryManager::SharedMemoryManager(std::size_t module_id, std::size_t raw_block_size,
-                                         std::size_t blocks_per_page, bool attach_only)
+/**
+ * @brief 构造函数
+ * @param module_id 模块编号
+ * @param raw_block_size 每个原始块大小（字节数，不含头部）
+ * @param blocks_per_page 每页的块数
+ * @param attach_only 是否仅附加到已有共享内存
+ *
+ * @details
+ * - 如果指定的共享内存已存在，则尝试附加并导入已有页。
+ * - 如果共享内存不存在且 attach_only=false，则创建新页并初始化。
+ */
+SharedMemoryManagerBase::SharedMemoryManagerBase(std::size_t module_id, std::size_t raw_block_size,
+                                                 std::size_t blocks_per_page, bool attach_only)
         : blocks_per_page_(blocks_per_page), block_size_(raw_block_size + sizeof(MemoryBlockHeader)),
           raw_block_size_(raw_block_size), module_id_(module_id) {
     std::size_t nSize = blocks_per_page_ * (block_size_);
@@ -32,11 +49,9 @@ SharedMemoryManager::SharedMemoryManager(std::size_t module_id, std::size_t raw_
             }
 
             firstpage.raw_data = (char *) GetShareMemory(firstpage.handle);
-
-            ///找到头数据块的头
             firstpage.block_headers = (MemoryBlockHeader *) (firstpage.raw_data + raw_block_size_ * blocks_per_page_);
 
-            ///清空所有内存;
+            /// 清空所有内存
             memset(firstpage.raw_data, 0, nSize);
 
             page_count_++;
@@ -45,25 +60,29 @@ SharedMemoryManager::SharedMemoryManager(std::size_t module_id, std::size_t raw_
 
             pages_.push_back(firstpage);
         }
-
         empty_created_ = true;
     }
 }
 
-SharedMemoryManager::~SharedMemoryManager()
-{
-    for (std::size_t r = 0; r < (std::size_t)pages_.size(); r++)
-    {
+/**
+ * @brief 析构函数
+ * @details 释放所有已映射的共享内存，并关闭句柄
+ */
+SharedMemoryManagerBase::~SharedMemoryManagerBase() {
+    for (std::size_t r = 0; r < (std::size_t)pages_.size(); r++) {
         cfl::shm::ReleaseShareMemory(pages_[r].raw_data);
         cfl::shm::CloseShareMemory(pages_[r].handle);
         pages_[r].handle = INVALID_HANDLE_VALUE;
         pages_[r].raw_data = nullptr;
     }
-
     pages_.clear();
 }
 
-void SharedMemoryManager::import_existing_pages() {
+/**
+ * @brief 导入现有共享内存页
+ * @details 递归打开 module_id 下的所有共享内存页，并加入页列表
+ */
+void SharedMemoryManagerBase::import_existing_pages() {
     while (auto handle = OpenShareMemory(module_id_, page_count_)) {
         SharedMemoryPage page{ .handle = handle.value() };
         page.raw_data = static_cast<char*>(GetShareMemory(page.handle));
@@ -77,12 +96,17 @@ void SharedMemoryManager::import_existing_pages() {
     }
 }
 
-void SharedMemoryManager::init_page(SharedMemoryPage &page) {
-//    char *pdata = page.raw_data;
+/**
+ * @brief 初始化一个共享内存页
+ * @param page 待初始化的页
+ *
+ * @details
+ * - 将页面数据区清零
+ * - 初始化所有块头
+ * - 注册到 block_map_ 和 free_blocks_ 中
+ */
+void SharedMemoryManagerBase::init_page(SharedMemoryPage &page) {
     std::fill_n(page.raw_data, blocks_per_page_ * raw_block_size_, 0);
-//    for (std::size_t i = 0; i != blocks_per_page_; ++i) {
-//        *(pdata + (block_size_) * i) = BLOCK_CHECK_CODE;
-//    }
 
     auto start_index = blocks_per_page_ * (page_count_ - 1);
     auto headers = std::span<MemoryBlockHeader>(page.block_headers, blocks_per_page_);
@@ -95,17 +119,19 @@ void SharedMemoryManager::init_page(SharedMemoryPage &page) {
         block_map_.emplace(header.index, std::ref(header));
         free_blocks_.emplace(header.index, std::ref(header));
     }
-
-//    for (std::size_t i = nStartindex; i < total_blocks_; ++i) {
-//        MemoryBlockHeader *ptem = &(page.block_headers[i - nStartindex]);
-//        new(ptem)(MemoryBlockHeader);
-//        ptem->index = i;
-//        block_map_.insert(std::make_pair(i, ptem));
-//        free_blocks_.insert(std::make_pair(i, ptem));
-//    }
 }
 
-std::optional<SharedObject *> SharedMemoryManager::allocate_object(bool new_block) {
+/**
+ * @brief 分配一个新对象
+ * @param new_block 是否标记为新建
+ * @return 分配成功返回对象指针，否则返回空
+ *
+ * @details
+ * - 优先从空闲块中分配
+ * - 如果没有空闲块，则清理已释放的块
+ * - 如果仍然不足，尝试创建新页
+ */
+std::optional<SharedObject *> SharedMemoryManagerBase::allocate_object(bool new_block) {
     if (free_blocks_.empty()) {
         clean_dirty_blocks();
     }
@@ -148,7 +174,12 @@ std::optional<SharedObject *> SharedMemoryManager::allocate_object(bool new_bloc
     return nullptr;
 }
 
-SharedObject *SharedMemoryManager::get_object(std::size_t index) {
+/**
+ * @brief 根据索引获取对象指针
+ * @param index 块索引
+ * @return 指向共享对象的指针，越界时返回 nullptr
+ */
+SharedObject *SharedMemoryManagerBase::get_object(std::size_t index) {
     if (index >= total_blocks_) {
         return nullptr;
     }
@@ -159,16 +190,22 @@ SharedObject *SharedMemoryManager::get_object(std::size_t index) {
     return reinterpret_cast<SharedObject *>(page.raw_data + raw_block_size_ * pageIndex);
 }
 
-bool SharedMemoryManager::destroy_object(cfl::shm::SharedObject *obj)
-{
-    if (obj == nullptr)
-    {
+/**
+ * @brief 销毁一个对象
+ * @param obj 待销毁的对象
+ * @return 是否成功销毁
+ *
+ * @details
+ * - 将对象重置
+ * - 将其从 used_blocks_ 移动到 free_blocks_
+ */
+bool SharedMemoryManagerBase::destroy_object(cfl::shm::SharedObject *obj) {
+    if (obj == nullptr) {
         return false;
     }
     obj->reset();
     auto it = used_blocks_.find(obj);
-    if (it == used_blocks_.end())
-    {
+    if (it == used_blocks_.end()) {
         return false;
     }
     auto& header = it->second.get();
@@ -178,7 +215,13 @@ bool SharedMemoryManager::destroy_object(cfl::shm::SharedObject *obj)
     return true;
 }
 
-void SharedMemoryManager::clean_dirty_blocks() {
+/**
+ * @brief 清理已用区块中未被使用的对象
+ *
+ * @details
+ * 遍历 used_blocks_，将已经被释放的对象重新放入 free_blocks_
+ */
+void SharedMemoryManagerBase::clean_dirty_blocks() {
     std::erase_if(used_blocks_, [&](auto& kv) {
         auto* pObject = static_cast<SharedObject *>(kv.first);
         auto& header = kv.second.get();
@@ -192,7 +235,16 @@ void SharedMemoryManager::clean_dirty_blocks() {
     });
 }
 
-bool SharedMemoryManager::create_new_page() {
+/**
+ * @brief 创建一个新页
+ * @return 是否创建成功
+ *
+ * @details
+ * - 调用 CreateShareMemory 新建共享内存
+ * - 初始化页数据
+ * - 加入页列表
+ */
+bool SharedMemoryManagerBase::create_new_page() {
     std::size_t nSize = blocks_per_page_ * (block_size_);
     SharedMemoryPage newPage;
     newPage.handle = CreateShareMemory(module_id_, page_count_, nSize);
@@ -212,4 +264,3 @@ bool SharedMemoryManager::create_new_page() {
     pages_.push_back(newPage);
     return true;
 }
-

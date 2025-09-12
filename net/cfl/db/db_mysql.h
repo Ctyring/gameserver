@@ -23,7 +23,7 @@ namespace cfl::db {
         time_t ts;
     };
 
-    inline std::tm localtime_safe(const std::time_t& time) {
+    inline std::tm localtime_safe(const std::time_t &time) {
         std::tm tm{};
 #ifdef _WIN32
         localtime_s(&tm, &time);
@@ -33,23 +33,24 @@ namespace cfl::db {
         return tm;
     }
 
-    inline bool mysql_time_to_time_t(const MySQLTime& mt, std::time_t& ts) {
+    inline bool mysql_time_to_time_t(const MySQLTime &mt, std::time_t &ts) {
         ts = mt.ts;
         return true;
     }
 
-    inline bool time_t_to_mysql_time(const std::time_t& ts, MySQLTime& mt) {
+    inline bool time_t_to_mysql_time(const std::time_t &ts, MySQLTime &mt) {
         mt.ts = ts;
         return true;
     }
 
-    inline std::tm mysql_time_to_tm(const MySQLTime& mt) {
+    inline std::tm mysql_time_to_tm(const MySQLTime &mt) {
         return localtime_safe(mt.ts);
     }
 
-    inline MySQLTime tm_to_mysql_time(const std::tm& tm) {
-        return MySQLTime{std::mktime(const_cast<std::tm*>(&tm))};
+    inline MySQLTime tm_to_mysql_time(const std::tm &tm) {
+        return MySQLTime{std::mktime(const_cast<std::tm *>(&tm))};
     }
+
     /**
      * @brief MySQL 查询结果实现（基于 MySQL X DevAPI）
      * @details 统一封装 query / statement 返回的结果集
@@ -404,6 +405,8 @@ namespace cfl::db {
         std::unordered_map<std::string, std::unordered_map<std::string, std::string>> db_defines_;
     };
 
+    typedef cfl::SingletonPtr<MySQLManager> MySQLMgr;
+
     /**
      * @brief MySQL 工具类
      * @details 提供便捷的 SQL 查询与执行入口，基于 mysqlx::Session。
@@ -436,6 +439,17 @@ namespace cfl::db {
         static int execute(std::string_view name, std::string_view sql);
 
         template<typename... Args>
+        static int execute_prepared(const char *name, const char *sql, Args &&... args) {
+            auto db = MySQLMgr::instance()->get(std::string{name});
+            auto mysql = std::dynamic_pointer_cast<MySQL>(db);
+            if (!mysql) {
+                return -1;
+            }
+
+            return mysql->execStmt(sql, std::forward<Args>(args)...);
+        }
+
+        template<typename... Args>
         static int execute_fmt(std::string_view name, std::string_view fmt, Args &&... args) {
             auto sql = std::vformat(fmt, std::make_format_args(std::forward<Args>(args)...));
             return execute(name, sql);
@@ -450,41 +464,6 @@ namespace cfl::db {
             return try_execute(name, count, sql);
         }
     };
-
-    typedef cfl::SingletonPtr<MySQLManager> MySQLMgr;
-//    class MySQLMgr {
-//    public:
-//        CFL_API static MySQLManager& instance() {
-//            static MySQLManager inst; // C++11+ 局部静态保证线程安全
-//            return inst;
-//        }
-//    };
-// ================== MySQL 参数绑定模板工具 ==================
-    template<typename... Args>
-    int MySQL::execStmt(const char *stmt, Args &&... args) {
-        auto st = MySQLStatement::create(m_session, stmt);
-        if (!st) {
-            return -1;
-        }
-        int rt = bindX(st, args...);
-        if (rt != 0) {
-            return rt;
-        }
-        return st->execute();
-    }
-
-    template<class... Args>
-    SqlData::Ptr MySQL::queryStmt(const char *stmt, Args &&... args) {
-        auto st = MySQLStatement::create(m_session, stmt);
-        if (!st) {
-            return nullptr;
-        }
-        int rt = bindX(st, args...);
-        if (rt != 0) {
-            return nullptr;
-        }
-        return st->query();
-    }
 
     namespace {
         template<size_t N, typename... Args>
@@ -529,9 +508,38 @@ namespace cfl::db {
 
             static int BindSingle(MySQLStatement::Ptr stmt, double v) { return stmt->bind(N, v); }
 
-            static int BindSingle(MySQLStatement::Ptr stmt, const std::string &v) { return stmt->bind(N,std::string_view(v));}
+            static int BindSingle(MySQLStatement::Ptr stmt, const std::string &v) { return stmt->bind(N,
+                                                                                                      std::string_view(
+                                                                                                              v));
+            }
 
             static int BindSingle(MySQLStatement::Ptr stmt, std::string_view v) { return stmt->bind(N, v); }
         };
+    }
+
+    template<typename... Args>
+    int MySQL::execStmt(const char *stmt, Args &&... args) {
+        auto st = MySQLStatement::create(m_session, stmt);
+        if (!st) {
+            return -1;
+        }
+        int rt = bindX(st, args...);
+        if (rt != 0) {
+            return rt;
+        }
+        return st->execute();
+    }
+
+    template<class... Args>
+    SqlData::Ptr MySQL::queryStmt(const char *stmt, Args &&... args) {
+        auto st = MySQLStatement::create(m_session, stmt);
+        if (!st) {
+            return nullptr;
+        }
+        int rt = bindX(st, args...);
+        if (rt != 0) {
+            return nullptr;
+        }
+        return st->query();
     }
 }

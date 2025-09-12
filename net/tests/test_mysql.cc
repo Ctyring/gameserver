@@ -13,7 +13,7 @@ int main() {
         SetConsoleCP(CP_UTF8);
 
         // 初始化配置
-         cfl::Config::Init();
+        cfl::Config::Init();
 
         // 注册数据库
         MySQLMgr::instance()->register_mysql("test");
