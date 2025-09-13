@@ -155,6 +155,8 @@ namespace cfl::db {
             m_last_error_code = rc;
             m_last_error_msg = errmsg ? errmsg : "unknown";
             sqlite3_free(errmsg);
+
+            spdlog::error("sqlite3_exec error: {}", m_last_error_msg);
         }
         m_affected_rows = sqlite3_changes(m_db);
         return rc == SQLITE_OK ? (int) m_affected_rows : -1;
@@ -164,8 +166,10 @@ namespace cfl::db {
 
     SqlData::Ptr SQLite::query(std::string_view sql) {
         sqlite3_stmt *stmt = nullptr;
-        if (sqlite3_prepare_v2(m_db, sql.data(), -1, &stmt, nullptr) != SQLITE_OK)
+        if (sqlite3_prepare_v2(m_db, sql.data(), -1, &stmt, nullptr) != SQLITE_OK){
+            spdlog::error("sqlite3_prepare_v2 error: {}", sqlite3_errmsg(m_db));
             return std::make_shared<SQLiteResult>(sqlite3_errcode(m_db), sqlite3_errmsg(m_db));
+        }
 
         auto result = std::make_shared<SQLiteResult>();
         int col_count = sqlite3_column_count(stmt);
@@ -184,6 +188,7 @@ namespace cfl::db {
         }
 
         sqlite3_finalize(stmt);
+//        spdlog::debug("sqlite3_step: {}", row);
         return result;
     }
 
@@ -386,13 +391,6 @@ namespace cfl::db {
         return SQLiteMgr::instance()->execute(std::string(name), sql);
     }
 
-    // 执行格式化查询
-    template<typename... Args>
-    [[nodiscard]] SqlData::Ptr SQLiteUtil::query_fmt(std::string_view name, std::string_view fmt, Args &&... args) {
-        std::string sql = std::vformat(fmt, std::make_format_args(std::forward<Args>(args)...));
-        return SQLiteMgr::instance()->query(std::string{name}, sql);
-    }
-
 // 带重试的查询
     [[nodiscard]] SqlData::Ptr SQLiteUtil::try_query(std::string_view name, uint32_t count, std::string_view sql) {
         SqlData::Ptr result = nullptr;
@@ -405,37 +403,6 @@ namespace cfl::db {
         return result;
     }
 
-// 带重试的格式化查询
-    template<typename... Args>
-    [[nodiscard]] SqlData::Ptr
-    SQLiteUtil::try_query_fmt(std::string_view name, uint32_t count, std::string_view fmt, Args &&... args) {
-        std::string sql = std::vformat(fmt, std::make_format_args(std::forward<Args>(args)...));
-        return try_query(name, count, sql);
-    }
-
-// 执行预编译 SQL（带参数绑定）
-    template<typename... Args>
-    int SQLiteUtil::execute_prepared(const char *name, const char *sql, Args &&... args) {
-        auto db = SQLiteMgr::instance()->get(name);
-        if (!db) {
-            return -1;
-        }
-
-        auto sqlite = std::dynamic_pointer_cast<SQLite>(db);
-        if (!sqlite) {
-            return -1;
-        }
-
-        return sqlite->execStmt(sql, std::forward<Args>(args)...);
-    }
-
-// 执行格式化更新
-    template<typename... Args>
-    int SQLiteUtil::execute_fmt(std::string_view name, std::string_view fmt, Args &&... args) {
-        std::string sql = std::vformat(fmt, std::make_format_args(std::forward<Args>(args)...));
-        return execute(name, sql);
-    }
-
 // 带重试的更新
     int SQLiteUtil::try_execute(std::string_view name, uint32_t count, std::string_view sql) {
         int rc = -1;
@@ -446,13 +413,6 @@ namespace cfl::db {
             }
         }
         return rc;
-    }
-
-// 带重试的格式化更新
-    template<typename... Args>
-    int SQLiteUtil::try_execute_fmt(std::string_view name, uint32_t count, std::string_view fmt, Args &&... args) {
-        std::string sql = std::vformat(fmt, std::make_format_args(std::forward<Args>(args)...));
-        return try_execute(name, count, sql);
     }
 
 } // namespace cfl::db

@@ -140,7 +140,7 @@ namespace cfl {
                 db_params_[key] = value;
             }
 
-            spdlog::info("MySQL config loaded: {}", yaml_path);
+//            spdlog::info("MySQL config loaded: {}", yaml_path);
             for (const auto &kv : db_params_) {
                 spdlog::info("  {} = {}", kv.first, kv.second);
             }

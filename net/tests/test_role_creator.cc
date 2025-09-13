@@ -33,7 +33,6 @@ int main() {
     role->roleId = 1001;
     role->accountId = 101;
     strncpy_s(role->name, sizeof(role->name), "测试角色", sizeof(role->name) - 1);
-    role->name[sizeof(role->name) - 1] = '\0';
     role->carrerId = 1;
     role->level = 10;
     role->action[0] = 100;

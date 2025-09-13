@@ -567,16 +567,25 @@ namespace cfl::db {
     int MySQLStatement::execute() {
         try {
             auto sql = session_->sql(sql_);
+//            spdlog::info("[MySQLStatement] execute bound_params_: {}", bound_params_.size());
             if (!bound_params_.empty()) {
                 sql.bind(bound_params_.begin(), bound_params_.end());
             }
+//            spdlog::info("[MySQLStatement] execute: {}", sql_);
             auto res = sql.execute();
+//            spdlog::info("[MySQLStatement] execute affected_rows: {}", res.getAffectedItemsCount());
             last_error_ = 0;
             last_errmsg_.clear();
             return static_cast<int>(res.getAffectedItemsCount());
         } catch (const mysqlx::Error &e) {
             last_error_ = -1;
             last_errmsg_ = e.what();
+            spdlog::error("[MySQLStatement] execute failed: {}", e.what());
+            return -1;
+        } catch (...) {
+            last_error_ = -1;
+            last_errmsg_ = "unknown error";
+            spdlog::error("[MySQLStatement] execute failed: unknown error");
             return -1;
         }
     }

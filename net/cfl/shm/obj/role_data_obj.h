@@ -101,6 +101,47 @@ namespace cfl::shm {
         }
 
         /**
+         * @brief 保存角色数据到SQLite（插入或替换）
+         *
+         * @details 使用 SQLite 的 `INSERT OR REPLACE`，如果记录已存在则替换，否则插入新记录。
+         *
+         * @return true 保存成功
+         * @return false 保存失败
+         */
+        [[nodiscard]]
+        bool SaveSQLite() {
+            int ret = cfl::db::SQLiteUtil::execute_prepared(
+                    "gameserver",
+                    "INSERT OR REPLACE INTO role "
+                    "(id, accountid, name, carrerid, level, citycopyid, exp, langid, viplevel, vipexp, "
+                    "action1, action2, action3, action4, actime1, actime2, actime3, actime4, "
+                    "createtime, logontime, logofftime, grouptime, fightvalue, guildid) "
+                    "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, "
+                    "?, ?, ?, ?, ?, ?, ?, ?, "
+                    "?, ?, ?, ?, ?, ?)",
+                    roleId,
+                    accountId,
+                    std::string_view(name),
+                    carrerId,
+                    level,
+                    cityCopyId,
+                    exp,
+                    langId,
+                    vipLevel,
+                    vipExp,
+                    action[0], action[1], action[2], action[3],
+                    actime[0], actime[1], actime[2], actime[3],
+                    createTime,
+                    logonTime,
+                    logoffTime,
+                    groupMailTime,
+                    fightValue,
+                    guildId
+            );
+            return ret >= 0;
+        }
+
+        /**
          * @brief 更新角色数据（只修改已有记录，不插入新记录）
          *
          * @details 使用 MySQL 的 `UPDATE` 语句，根据 `id` 更新已有记录。
@@ -112,6 +153,47 @@ namespace cfl::shm {
         [[nodiscard]]
         bool Update() {
             int ret = cfl::db::MySQLUtil::execute_prepared(
+                    "gameserver",
+                    "UPDATE role SET "
+                    "accountid=?, name=?, carrerid=?, level=?, citycopyid=?, exp=?, langid=?, viplevel=?, vipexp=?, "
+                    "action1=?, action2=?, action3=?, action4=?, "
+                    "actime1=?, actime2=?, actime3=?, actime4=?, "
+                    "createtime=?, logontime=?, logofftime=?, grouptime=?, fightvalue=?, guildid=? "
+                    "WHERE id=?",
+                    accountId,
+                    std::string_view(name),
+                    carrerId,
+                    level,
+                    cityCopyId,
+                    exp,
+                    langId,
+                    vipLevel,
+                    vipExp,
+                    action[0], action[1], action[2], action[3],
+                    actime[0], actime[1], actime[2], actime[3],
+                    createTime,
+                    logonTime,
+                    logoffTime,
+                    groupMailTime,
+                    fightValue,
+                    guildId,
+                    roleId  ///< WHERE 条件
+            );
+            return ret >= 0;
+        }
+
+        /**
+         * @brief 更新角色数据到SQLite（只修改已有记录，不插入新记录）
+         *
+         * @details 使用 SQLite 的 `UPDATE` 语句，根据 [id](file://D:\cProjet\gameserver\net\cmake-build-debug\_deps\mysqlcpp-src\jdbc\examples\examples.h#L77-L77) 更新已有记录。
+         * 与 SaveSQLite 的区别在于：SaveSQLite 使用 INSERT OR REPLACE，UpdateSQLite 使用 UPDATE。
+         *
+         * @return true 更新成功
+         * @return false 更新失败
+         */
+        [[nodiscard]]
+        bool UpdateSQLite() {
+            int ret = cfl::db::SQLiteUtil::execute_prepared(
                     "gameserver",
                     "UPDATE role SET "
                     "accountid=?, name=?, carrerid=?, level=?, citycopyid=?, exp=?, langid=?, viplevel=?, vipexp=?, "
@@ -159,5 +241,22 @@ namespace cfl::shm {
             return ret >= 0;
         }
 
+        /**
+         * @brief 删除角色数据到SQLite（逻辑删除）
+         *
+         * @details 通过更新 `isdelete=1` 标志位来实现逻辑删除，而不是物理删除。
+         *
+         * @return true 删除成功
+         * @return false 删除失败
+         */
+        [[nodiscard]]
+        bool DeleteSQLite() {
+            int ret = cfl::db::SQLiteUtil::execute_prepared(
+                    "gameserver",
+                    "UPDATE role SET isdelete = 1 WHERE id = ?",
+                    roleId
+            );
+            return ret >= 0;
+        }
     };
 }

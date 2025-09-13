@@ -87,7 +87,8 @@ set(TEST_TARGETS
         test_log test_config test_asio test_asio_tcp
         test_asio_udp test_asio_async
         test_ssm_creator test_ssm_attacher test_mysql
-        test_abseil test_role test_role_creator test_role_attacher
+        test_abseil test_role test_role_sqlite
+        test_role_creator test_role_attacher
         test_sqlite3
 )
 

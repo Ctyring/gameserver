@@ -416,6 +416,7 @@ namespace cfl::db {
             // 获取数据库连接
             auto db = get(name);
             if (!db) {
+                spdlog::error("[db][sqlite] get db failed, name: {}", name);
                 return nullptr;
             }
 
@@ -450,32 +451,56 @@ namespace cfl::db {
 
         /// 执行格式化查询
         template<typename... Args>
-        [[nodiscard]] static DataPtr query_fmt(std::string_view name, std::string_view fmt, Args &&... args);
+        [[nodiscard]] static DataPtr query_fmt(std::string_view name, std::string_view fmt, Args &&... args) {
+            std::string sql = std::vformat(fmt, std::make_format_args(std::forward<Args>(args)...));
+            return SQLiteMgr::instance()->query(std::string(name), sql);
+        }
 
         /// 带重试的查询
         [[nodiscard]] static DataPtr try_query(std::string_view name, uint32_t count, std::string_view sql);
 
         /// 带重试的格式化查询
         template<typename... Args>
-        [[nodiscard]] static DataPtr try_query_fmt(std::string_view name, uint32_t count, std::string_view fmt, Args &&... args);
+        [[nodiscard]] static DataPtr try_query_fmt(std::string_view name, uint32_t count, std::string_view fmt, Args &&... args) {
+            std::string sql = std::vformat(fmt, std::make_format_args(std::forward<Args>(args)...));
+            return try_query(name, count, sql);
+        }
 
         /// 执行更新
         static int execute(std::string_view name, std::string_view sql);
 
         /// 执行预编译 SQL（带参数绑定）
         template<typename... Args>
-        static int execute_prepared(const char *name, const char *sql, Args &&... args);
+        static int execute_prepared(const char *name, const char *sql, Args &&... args) {
+            auto db = SQLiteMgr::instance()->get(name);
+            if (!db) {
+                return -1;
+            }
+
+            auto sqlite = std::dynamic_pointer_cast<SQLite>(db);
+            if (!sqlite) {
+                return -1;
+            }
+
+            return sqlite->execStmt(sql, std::forward<Args>(args)...);
+        }
 
         /// 执行格式化更新
         template<typename... Args>
-        static int execute_fmt(std::string_view name, std::string_view fmt, Args &&... args);
+        static int execute_fmt(std::string_view name, std::string_view fmt, Args &&... args) {
+            std::string sql = std::vformat(fmt, std::make_format_args(std::forward<Args>(args)...));
+            return execute(name, sql);
+        }
 
         /// 带重试的更新
         static int try_execute(std::string_view name, uint32_t count, std::string_view sql);
 
         /// 带重试的格式化更新
         template<typename... Args>
-        static int try_execute_fmt(std::string_view name, uint32_t count, std::string_view fmt, Args &&... args);
+        static int try_execute_fmt(std::string_view name, uint32_t count, std::string_view fmt, Args &&... args) {
+            std::string sql = std::vformat(fmt, std::make_format_args(std::forward<Args>(args)...));
+            return try_execute(name, count, sql);
+        }
     };
 
     // ========================== 内部工具：参数绑定器 ==========================

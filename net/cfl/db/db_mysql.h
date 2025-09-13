@@ -521,13 +521,20 @@ namespace cfl::db {
     int MySQL::execStmt(const char *stmt, Args &&... args) {
         auto st = MySQLStatement::create(m_session, stmt);
         if (!st) {
+            spdlog::error("[MySQL][execStmt] bind error: {}", stmt);
             return -1;
         }
         int rt = bindX(st, args...);
         if (rt != 0) {
+            spdlog::error("[MySQL][execStmt] bind error: {}", stmt);
             return rt;
         }
-        return st->execute();
+        auto res = st->execute();
+        if (res == -1) {
+            spdlog::error("[MySQL][execStmt] execute error: {} {}", res ,stmt);
+            return -1;
+        }
+        return res;
     }
 
     template<class... Args>
