@@ -7,6 +7,7 @@
 #include <cstddef>       // for std::size_t
 #include <cstdint>       // for uint32_t 等
 #include "config.h"
+#include "db/db.h"
 
 #if defined(_WIN32) || defined(_WIN64)
 #ifdef CFL_EXPORTS

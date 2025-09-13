@@ -48,12 +48,16 @@ FetchContent_Declare(abseil
 )
 FetchContent_MakeAvailable(abseil)
 
+# ---------- sqlite3 ----------
+find_package(SQLite3 REQUIRED)
+
 # ---------- 源文件 ----------
 set(LIB_SRC
         cfl/config.cc
         cfl/shm/shmpage.cc
         cfl/shm/shmpool.cc
         cfl/db/db_mysql.cc
+        cfl/db/db_sqlite.cc
 )
 
 add_library(cfl SHARED ${LIB_SRC})
@@ -68,6 +72,7 @@ target_link_libraries(cfl
         ws2_32
         mswsock
         absl::flat_hash_map
+        SQLite::SQLite3
 )
 
 target_include_directories(cfl PUBLIC
@@ -83,6 +88,7 @@ set(TEST_TARGETS
         test_asio_udp test_asio_async
         test_ssm_creator test_ssm_attacher test_mysql
         test_abseil test_role test_role_creator test_role_attacher
+        test_sqlite3
 )
 
 foreach (target_name IN LISTS TEST_TARGETS)
