@@ -51,6 +51,39 @@ FetchContent_MakeAvailable(abseil)
 # ---------- sqlite3 ----------
 find_package(SQLite3 REQUIRED)
 
+# ---------- odb ----------
+#find_package(odb CONFIG REQUIRED)
+##find_package(unofficial-odb-sqlite REQUIRED)
+## 找到odb的编译器
+#find_program(ODB_EXECUTABLE NAMES odb)
+#message(STATUS "ODB_EXECUTABLE = ${ODB_EXECUTABLE}")
+## 定义持久化对象头文件
+#set(ODB_HEADERS
+#        ${CMAKE_CURRENT_SOURCE_DIR}/cfl/db/person.h
+#)
+## 定义输出目录
+#set(ODB_GEN_DIR ${CMAKE_CURRENT_BINARY_DIR}/odb_gen)
+#file(MAKE_DIRECTORY ${ODB_GEN_DIR})
+#set(ODB_GEN_SOURCES
+#        ${ODB_GEN_DIR}/person-odb.cxx
+#)
+#set(ODB_GEN_HEADERS
+#        ${ODB_GEN_DIR}/person-odb.hxx
+#)
+#add_custom_command(
+#        OUTPUT ${ODB_GEN_SOURCES} ${ODB_GEN_HEADERS}
+#        COMMAND ${CMAKE_COMMAND} -E echo ">>> Running ODB compiler on ${ODB_HEADERS}"
+#        COMMAND ${ODB_EXECUTABLE}
+#        -d sqlite
+#        --generate-query
+#        --generate-schema
+#        --output-dir ${ODB_GEN_DIR}
+#        ${ODB_HEADERS}
+#        DEPENDS ${ODB_HEADERS}
+#        VERBATIM
+#)
+#
+
 # ---------- 源文件 ----------
 set(LIB_SRC
         cfl/config.cc
@@ -60,7 +93,7 @@ set(LIB_SRC
         cfl/db/db_sqlite.cc
 )
 
-add_library(cfl SHARED ${LIB_SRC})
+add_library(cfl SHARED ${LIB_SRC} ${ODB_GEN_SOURCES})
 target_compile_definitions(cfl PRIVATE CFL_EXPORTS)
 
 target_link_libraries(cfl
@@ -80,6 +113,7 @@ target_include_directories(cfl PUBLIC
         ${asio_SOURCE_DIR}/asio/include
         ${CMAKE_BINARY_DIR}/include
         ${CMAKE_BINARY_DIR}/include/mysqlx
+        ${ODB_INCLUDE_DIRS}
 )
 
 # ---------- 测试 ----------
@@ -89,7 +123,7 @@ set(TEST_TARGETS
         test_ssm_creator test_ssm_attacher test_mysql
         test_abseil test_role test_role2 test_role_sqlite
         test_role_creator test_role_attacher
-        test_sqlite3
+        test_sqlite3 test_handler
 )
 
 foreach (target_name IN LISTS TEST_TARGETS)
