@@ -53,7 +53,7 @@ find_package(SQLite3 REQUIRED)
 
 # ---------- odb ----------
 #find_package(odb CONFIG REQUIRED)
-##find_package(unofficial-odb-sqlite REQUIRED)
+#find_package(libodb-sqlite CONFIG REQUIRED)
 ## 找到odb的编译器
 #find_program(ODB_EXECUTABLE NAMES odb)
 #message(STATUS "ODB_EXECUTABLE = ${ODB_EXECUTABLE}")
@@ -83,6 +83,34 @@ find_package(SQLite3 REQUIRED)
 #        VERBATIM
 #)
 #
+# ---------- protobuf ----------
+find_package(protobuf CONFIG REQUIRED)
+set(PROTO_FILES
+        ${CMAKE_SOURCE_DIR}/cfl/protos/message.proto
+)
+set(PROTO_OUT_PUT_PATH ${CMAKE_SOURCE_DIR}/cfl/protos/gen_proto)
+# 自动调用 protoc 生成
+set(GENERATED_SRC)
+set(GENERATED_HDR)
+
+foreach (PROTO ${PROTO_FILES})
+    get_filename_component(PROTO_NAME ${PROTO} NAME_WE)
+
+    set(SRC ${PROTO_OUT_PUT_PATH}/${PROTO_NAME}.pb.cc)
+    set(HDR ${PROTO_OUT_PUT_PATH}/${PROTO_NAME}.pb.h)
+
+    add_custom_command(
+            OUTPUT ${SRC} ${HDR}
+            COMMAND protobuf::protoc
+            --proto_path=${CMAKE_SOURCE_DIR}/cfl/protos
+            --cpp_out=${PROTO_OUT_PUT_PATH}
+            ${PROTO}
+            DEPENDS ${PROTO}
+    )
+
+    list(APPEND GENERATED_SRC ${SRC})
+    list(APPEND GENERATED_HDR ${HDR})
+endforeach ()
 
 # ---------- 源文件 ----------
 set(LIB_SRC
@@ -91,10 +119,11 @@ set(LIB_SRC
         cfl/shm/shmpool.cc
         cfl/db/db_mysql.cc
         cfl/db/db_sqlite.cc
+        ${GENERATED_SRC}
 )
 
-add_library(cfl SHARED ${LIB_SRC} ${ODB_GEN_SOURCES})
-target_compile_definitions(cfl PRIVATE CFL_EXPORTS)
+add_library(cfl SHARED ${LIB_SRC})
+target_compile_definitions(cfl PUBLIC CFL_EXPORTS)
 
 target_link_libraries(cfl
         PUBLIC
@@ -106,6 +135,10 @@ target_link_libraries(cfl
         mswsock
         absl::flat_hash_map
         SQLite::SQLite3
+        #        odb
+        #        odb-sqlite
+        protobuf::libprotobuf
+        #        protos
 )
 
 target_include_directories(cfl PUBLIC
@@ -114,6 +147,7 @@ target_include_directories(cfl PUBLIC
         ${CMAKE_BINARY_DIR}/include
         ${CMAKE_BINARY_DIR}/include/mysqlx
         ${ODB_INCLUDE_DIRS}
+        ${GENERATED_HDR}
 )
 
 # ---------- 测试 ----------
@@ -123,11 +157,14 @@ set(TEST_TARGETS
         test_ssm_creator test_ssm_attacher test_mysql
         test_abseil test_role test_role2 test_role_sqlite
         test_role_creator test_role_attacher
-        test_sqlite3 test_handler
+        test_sqlite3 test_handler test_proto
 )
 
 foreach (target_name IN LISTS TEST_TARGETS)
-    add_executable(${target_name} tests/${target_name}.cc)
+    add_executable(${target_name}
+            tests/${target_name}.cc
+            ${GENERATED_SRC}
+    )
     target_link_libraries(${target_name} PRIVATE cfl)
 endforeach ()
 
