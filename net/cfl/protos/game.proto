@@ -1,0 +1,536 @@
+syntax = "proto3";
+import "base.proto";
+
+//
+// GM 请求停止服务器
+//
+message GmStopServerReq {
+    uint32    data          = 1;  // 数据参数
+}
+
+message GmStopServerAck {
+    uint32    ret_code      = 1;  // 返回码
+}
+
+//
+// 服务器向服务器注册
+//
+message SvrRegToSvrReq {
+    int32     server_id     = 1;  // 服务器ID
+    string    server_name   = 2;  // 服务器名称
+    string    server_ip     = 3;  // 服务器IP地址
+    int32     server_port   = 4;  // 服务器端口
+    int32     http_port     = 5;  // HTTP端口
+}
+
+message SvrRegToSvrAck {
+    uint32    ret_code      = 1;  // 返回码
+    string    new_svr_name  = 2;  // 新的服务器名称
+}
+
+//
+// 角色断开连接
+//
+message RoleDisconnectReq {
+    uint64    account_id    = 1;  // 账号ID
+    uint64    role_id       = 2;  // 角色ID
+}
+
+message RoleDisconnectAck {
+    uint32    ret_code      = 1;  // 返回码
+}
+
+//
+// 角色重连
+//
+message RoleReconnectReq {
+    uint64    role_id       = 1;  // 角色ID
+    uint64    account_id    = 2;  // 账号ID
+    uint32    login_code    = 3;  // 登录验证码
+}
+
+message RoleReconnectAck {
+    uint32    ret_code      = 1;  // 返回码
+}
+
+//
+// 移除连接通知
+//
+message RemoveConnectNty {
+    uint64    role_id       = 1;  // 角色ID
+}
+
+//
+// 创建新场景
+//
+message CreateNewSceneReq {
+    int32     copy_id       = 1;  // 副本类型ID
+    int32     copy_type     = 2;  // 副本类型
+    int32     player_num    = 3;  // 玩家数量
+    uint64    create_param  = 4;  // 创建参数
+}
+
+message CreateNewSceneAck {
+    uint32    ret_code      = 1;  // 返回码
+    int32     copy_id       = 2;  // 副本ID
+    int32     copy_guid     = 3;  // 副本实例GUID
+    uint64    create_param  = 4;  // 创建参数
+    int32     server_id     = 5;  // 服务器ID
+    int32     copy_type     = 6;  // 副本类型
+    int32     player_num    = 7;  // 玩家数量
+}
+
+//
+// 进入场景
+//
+message EnterSceneReq {
+    uint64    role_id       = 1;  // 角色ID
+    int32     server_id     = 2;  // 场景服务器ID
+    int32     copy_guid     = 3;  // 副本实例ID
+    int32     copy_id       = 4;  // 副本类型ID
+}
+
+message EnterSceneAck {
+    uint32    ret_code      = 1;   // 返回码
+    int32     copy_id       = 2;   // 副本类型ID
+    int32     copy_guid     = 3;   // 副本实例ID
+    uint64    role_id       = 4;   // 角色ID
+    int32     carrer        = 5;   // 职业
+    int32     actor_id      = 6;   // 模型ID
+    string    role_name     = 7;   // 角色名称
+    int32     camp          = 8;   // 阵营
+    float     x             = 9;   // 位置X
+    float     y             = 10;  // 位置Y
+    float     z             = 11;  // 位置Z
+    float     ft            = 12;  // 面向角度
+    int32     hp            = 13;  // 当前血量
+    int32     mp            = 14;  // 当前魔法
+    int32     hp_max        = 15;  // 最大血量
+    int32     mp_max        = 16;  // 最大魔法
+    int32     speed         = 17;  // 移动速度
+    int32     mount_id      = 18;  // 坐骑ID
+    repeated int32 equips   = 19;  // 装备列表
+    repeated SkillItem skills = 20; // 技能列表
+}
+
+//
+// 返回主城
+//
+message BackToCityReq {
+    uint32    param         = 1;  // 参数
+}
+
+message BackToCityAck {
+    uint32    ret_code      = 1;  // 返回码
+}
+
+//
+// 离开场景
+//
+message LeaveSceneReq {
+    uint64    role_id       = 1;  // 角色ID
+    int32     reason        = 2;  // 离开原因
+}
+
+message LeaveSceneAck {
+    uint32    ret_code      = 1;  // 返回码
+}
+
+//
+// 放弃场景
+//
+message AbortSceneReq {
+    uint64    role_id       = 1;  // 角色ID
+    int32     reason        = 2;  // 放弃原因
+}
+
+message AbortSceneAck {
+    uint32    ret_code      = 1;  // 返回码
+}
+
+message AbortSceneNty {
+    uint64    role_id       = 1;  // 角色ID
+    int32     copy_id       = 2;  // 副本类型
+    int32     copy_guid     = 3;  // 副本实例GUID
+    int32     copy_type     = 4;  // 副本类型
+    int32     server_id     = 5;  // 服务器ID
+    int32     param         = 6;  // 参数
+}
+
+//
+// 传输角色数据
+//
+message TransRoleData {
+    uint64    role_id       = 1;  // 角色ID
+    string    name          = 2;  // 角色名称
+    int32     carrer_id     = 3;  // 职业ID
+    int32     actor_id      = 4;  // 模型ID
+    int32     level         = 5;  // 等级
+    int32     mount_id      = 6;  // 坐骑ID
+    int32     robot         = 7;  // 是否机器人
+    repeated int32 equips   = 8;  // 装备列表
+    repeated int32 propertys = 9; // 属性列表
+    repeated SkillItem skills = 10; // 技能列表
+}
+
+//
+// 传输宠物数据
+//
+message TransPetData {
+    uint64    pet_guid      = 1;  // 宠物GUID
+    int32     pet_id        = 2;  // 宠物ID
+    int32     actor_id      = 3;  // 模型ID
+    string    name          = 4;  // 宠物名字
+    int32     level         = 5;  // 等级
+    repeated int32 propertys = 6; // 属性
+    repeated SkillItem skills = 7; // 技能
+}
+
+//
+// 传输伙伴数据
+//
+message TransPartnerData {
+    uint64    partner_guid  = 1;  // 伙伴GUID
+    int32     partner_id    = 2;  // 伙伴ID
+    int32     actor_id      = 3;  // 模型ID
+    string    name          = 4;  // 伙伴名字
+    int32     level         = 5;  // 等级
+    repeated int32 propertys = 6; // 属性
+    repeated SkillItem skills = 7; // 技能
+}
+
+//
+// 战场传输数据项
+//
+message TransferDataItem {
+    int32              camp         = 1;  // 战场阵营
+    TransRoleData      role_data    = 2;  // 角色数据
+    TransPetData       pet_data     = 3;  // 宠物数据
+    TransPartnerData   partner_data = 4;  // 伙伴数据
+}
+
+message TransferDataReq {
+    repeated TransferDataItem trans_datas = 1; // 传输数据集合
+}
+
+message TransferDataAck {
+    uint32    ret_code      = 1;  // 返回码
+    uint64    role_id       = 2;  // 角色ID
+    int32     copy_id       = 3;  // 副本ID
+    int32     copy_guid     = 4;  // 副本GUID
+    int32     server_id     = 5;  // 服务器ID
+}
+
+message NotifyIntoScene {
+    uint64    role_id       = 1;  // 角色ID
+    int32     copy_id       = 2;  // 副本ID
+    int32     copy_guid     = 3;  // 副本GUID
+    int32     server_id     = 4;  // 服务器ID
+}
+
+message NearByRoleItem {
+    uint64    role_id       = 1;  // 角色ID
+    int32     actor_id      = 2;  // 模型ID
+    int32     level         = 3;  // 等级
+    string    name          = 4;  // 名字
+}
+
+message CopyInsItem {
+    uint32    copy_guid     = 1;  // 副本GUID
+    int32     copy_id       = 2;  // 副本ID
+    int32     copy_type     = 3;  // 副本类型
+    int32     server_id     = 4;  // 服务器ID
+}
+
+message CopyReportReq {
+    int32     server_id     = 1;  // 服务器ID
+    repeated  CopyInsItem copy_list = 2; // 副本列表
+}
+
+//
+// 使用血瓶
+//
+message UseHpBottleReq {
+}
+
+message UseHpBottleAck {
+    uint32    ret_code      = 1;  // 返回码
+    int32     count         = 2;  // 剩余数量
+}
+
+//
+// 使用蓝瓶
+//
+message UseMpBottleReq {
+}
+
+message UseMpBottleAck {
+    uint32    ret_code      = 1;  // 返回码
+    int32     count         = 2;  // 剩余数量
+}
+
+//
+// 聊天消息
+//
+message ChatMessageReq {
+    string    src_name      = 1;  // 发送者名字
+    uint64    src_id        = 2;  // 发送者ID
+    uint64    target_id     = 3;  // 接收者ID
+    int32     chat_chl      = 4;  // 聊天频道
+    uint64    guild_id      = 5;  // 公会ID
+    string    content       = 6;  // 聊天内容
+}
+
+message ChatMessageAck {
+    uint32    ret_code      = 1;  // 返回码
+}
+
+message ChatMessageNty {
+    string    src_name      = 1;  // 发送者名字
+    uint64    src_id        = 2;  // 发送者ID
+    int32     src_level     = 3;  // 发送者等级
+    uint64    target_id     = 4;  // 接收者ID
+    int32     chat_chl      = 5;  // 聊天频道
+    uint64    guild_id      = 6;  // 公会ID
+    uint64    time_stamp    = 7;  // 时间戳
+    string    content       = 8;  // 消息内容
+}
+
+//
+// 通用请求
+//
+message CommonReq {
+    uint32    param1        = 1;  // 参数1
+}
+
+message CommonAck {
+    uint32    ret_code      = 1;  // 返回码
+}
+
+//
+// 广播消息
+//
+message BroadMessageNotify {
+    uint32      msg_id      = 1;  // 消息ID
+    repeated    uint32 conn_id = 2; // 连接ID列表
+    bytes       msg_data    = 3;  // 消息数据
+}
+
+//
+// 逻辑服注册到登录服
+//
+message LogicRegToLoginReq {
+    int32     server_id     = 1;  // 服务器ID
+    string    server_name   = 2;  // 服务器名称
+    string    svr_inner_ip  = 3;  // 内部IP
+    int32     server_port   = 4;  // 服务器端口
+    int32     http_port     = 5;  // HTTP端口
+}
+
+message LogicRegToLoginAck {
+    uint32    ret_code      = 1;  // 返回码
+    string    new_svr_name  = 2;  // 新的服务器名
+    uint64    svr_open_time = 3;  // 开服时间
+}
+
+//
+// 逻辑服注册到数据库服
+//
+message LogicRegToDbSvrReq {
+    int32     server_id     = 1;  // 服务器ID
+    string    server_name   = 2;  // 服务器名称
+    uint32    process_id    = 3;  // 进程ID
+}
+
+message LogicRegToDbSvrAck {
+    uint32    ret_code      = 1;  // 返回码
+}
+
+//
+// 逻辑服状态更新
+//
+message LogicUpdateInfoReq {
+    int32     server_id     = 1;  // 服务器ID
+    string    server_name   = 2;  // 服务器名称
+    int32     max_online    = 3;  // 最大在线人数
+    int32     cur_online    = 4;  // 当前在线人数
+    int32     total_num     = 5;  // 总注册人数
+    int32     cache_num     = 6;  // 缓存人数
+    int32     status        = 7;  // 状态
+    int32     db_err_cnt    = 8;  // 数据库错误次数
+}
+
+message LogicUpdateInfoAck {
+    uint32    ret_code      = 1;  // 返回码
+    uint64    svr_open_time = 2;  // 开服时间
+}
+
+//
+// 装备操作
+//
+message SetupEquipReq {
+    uint64    equip_guid    = 1;  // 装备GUID
+    uint64    bag_guid      = 2;  // 背包GUID
+}
+
+message SetupEquipAck {
+    uint32    ret_code      = 1;  // 返回码
+}
+
+message UnsetEquipReq {
+    uint64    equip_guid    = 1;  // 装备GUID
+}
+
+message UnsetEquipAck {
+    uint32    ret_code      = 1;  // 返回码
+}
+
+//
+// 宝石操作
+//
+message SetupGemReq {
+    uint64    gem_guid      = 1;  // 宝石GUID
+    uint64    bag_guid      = 2;  // 背包GUID
+    int32     target_pos    = 3;  // 目标位置
+}
+
+message SetupGemAck {
+    uint32    ret_code      = 1;  // 返回码
+}
+
+message UnsetGemReq {
+    uint64    gem_guid      = 1;  // 宝石GUID
+}
+
+message UnsetGemAck {
+    uint32    ret_code      = 1;  // 返回码
+}
+
+//
+// 伙伴操作
+//
+message SetupPartnerReq {
+    uint64    partner_guid  = 1;  // 伙伴GUID
+    int32     target_pos    = 2;  // 目标位置
+}
+
+message SetupPartnerAck {
+    uint32    ret_code      = 1;  // 返回码
+}
+
+message UnsetPartnerReq {
+    int32     target_pos    = 1;  // 目标位置
+}
+
+message UnsetPartnerAck {
+    uint32    ret_code      = 1;  // 返回码
+}
+
+//
+// 坐骑操作
+//
+message SetupMountReq {
+    uint64    mount_guid    = 1;  // 坐骑GUID
+    int32     target_pos    = 2;  // 目标位置
+}
+
+message SetupMountAck {
+    uint32    ret_code      = 1;  // 返回码
+}
+
+message UnsetMountReq {
+    uint64    mount_guid    = 1;  // 坐骑GUID
+}
+
+message UnsetMountAck {
+    uint32    ret_code      = 1;  // 返回码
+}
+
+//
+// 宠物操作
+//
+message SetupPetReq {
+    uint64    pet_guid      = 1;  // 宠物GUID
+}
+
+message SetupPetAck {
+    uint32    ret_code      = 1;  // 返回码
+}
+
+message UnsetPetReq {
+    uint64    pet_guid      = 1;  // 宠物GUID
+}
+
+message UnsetPetAck {
+    uint32    ret_code      = 1;  // 返回码
+}
+
+//
+// 商城购买
+//
+message StoreBuyReq {
+    int32     store_type    = 1;  // 商城类型
+    int32     store_id      = 2;  // 商城物品ID
+    int32     buy_num       = 3;  // 购买数量
+}
+
+message StoreBuyAck {
+    uint32    ret_code      = 1;  // 返回码
+}
+
+//
+// 玩家数据变化通知
+//
+message ObjectChangeNotify {
+    int64     role_id       = 1;  // 角色ID
+    int32     change_type   = 2;  // 变化类型
+    int64     int_value1    = 3;  // 整数值1
+    int64     int_value2    = 4;  // 整数值2
+    string    str_value     = 5;  // 字符串值
+}
+
+//
+// 战斗伤害效果
+//
+message HitEffectItem {
+    uint64    cast_guid     = 1;  // 施放者GUID
+    uint64    target_guid   = 2;  // 目标GUID
+    int32     hurt_value    = 3;  // 伤害值
+    bool      crit          = 4;  // 是否暴击
+    uint32    hit_action_id = 5;  // 受击动作ID
+}
+
+message HitEffectNtf
+{
+    repeated HitEffectItem item_lists = 1;
+}
+
+message UseItemReq {
+}
+
+message UseItemAck {
+}
+
+message MsgGetRandomNameReq {
+    int32 sex = 1;
+}
+
+message MsgGetRandomNameAck {
+    string name = 1;
+}
+
+message MsgErrorCountNty{
+    uint32  error_count = 1;
+}
+
+message MsgGameParamReq
+{
+    int32  channel       =   1;      //渠道
+    string client_ver    =   2;      //版本
+}
+
+message MsgGameParamAck
+{
+    repeated string param_key   = 1;      //参数key
+    repeated string param_value = 2;     //参数值
+}

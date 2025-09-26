@@ -128,6 +128,8 @@ set(LIB_SRC
         cfl/shm/shmpool.cc
         cfl/db/db_mysql.cc
         cfl/db/db_sqlite.cc
+        cfl/playerobj.cc
+        cfl/module_base.cc
         cfl/connection.cc
         ${GENERATED_SRC}
 )
