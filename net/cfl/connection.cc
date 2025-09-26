@@ -2,7 +2,7 @@
 
 namespace cfl {
 Connection::Connection(asio::io_context& io_context)
-    : socket_(io_context), strand_(io_context.get_executor()) {
+    : socket_(io_context), strand_(asio::make_strand(io_context)) {
     // todo: 初始化一些参数
 }
 
@@ -54,6 +54,7 @@ void Connection::close() {
             self->status_ = NetStatus::Closed;
 
             // todo: 通知service
+            // todo: 通知ConnectionMgr
         }
     });
 }
