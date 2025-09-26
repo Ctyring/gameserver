@@ -67,7 +67,7 @@ find_package(SQLite3 REQUIRED)
 #set(ODB_GEN_SOURCES
 #        ${ODB_GEN_DIR}/person-odb.cxx
 #)
-#set(ODB_GEN_HEADERS
+#set(ODB_GEN_HEADERSA3
 #        ${ODB_GEN_DIR}/person-odb.hxx
 #)
 #add_custom_command(
@@ -86,7 +86,9 @@ find_package(SQLite3 REQUIRED)
 # ---------- protobuf ----------
 find_package(protobuf CONFIG REQUIRED)
 set(PROTO_FILES
-        ${CMAKE_SOURCE_DIR}/cfl/protos/message.proto
+        ${CMAKE_SOURCE_DIR}/cfl/protos/base.proto
+        ${CMAKE_SOURCE_DIR}/cfl/protos/login.proto
+        ${CMAKE_SOURCE_DIR}/cfl/protos/game.proto
 )
 set(PROTO_OUT_PUT_PATH ${CMAKE_SOURCE_DIR}/cfl/protos/gen_proto)
 # 自动调用 protoc 生成
@@ -102,6 +104,7 @@ foreach (PROTO ${PROTO_FILES})
     add_custom_command(
             OUTPUT ${SRC} ${HDR}
             COMMAND protobuf::protoc
+            #            -I=${CMAKE_SOURCE_DIR}/cfl/protos
             --proto_path=${CMAKE_SOURCE_DIR}/cfl/protos
             --cpp_out=${PROTO_OUT_PUT_PATH}
             ${PROTO}
@@ -111,7 +114,13 @@ foreach (PROTO ${PROTO_FILES})
     list(APPEND GENERATED_SRC ${SRC})
     list(APPEND GENERATED_HDR ${HDR})
 endforeach ()
-
+# ---------- magic_enum ----------
+#FetchContent_Declare(
+#        magic_enum
+#        GIT_REPOSITORY https://github.com/Neargye/magic_enum.git
+#        GIT_TAG        v0.9.5   # 版本号，可以改成最新的 release
+#)
+#FetchContent_MakeAvailable(magic_enum)
 # ---------- 源文件 ----------
 set(LIB_SRC
         cfl/config.cc
@@ -119,6 +128,7 @@ set(LIB_SRC
         cfl/shm/shmpool.cc
         cfl/db/db_mysql.cc
         cfl/db/db_sqlite.cc
+        cfl/connection.cc
         ${GENERATED_SRC}
 )
 
@@ -139,6 +149,7 @@ target_link_libraries(cfl
         #        odb-sqlite
         protobuf::libprotobuf
         #        protos
+        #        magic_enum::magic_enum
 )
 
 target_include_directories(cfl PUBLIC
@@ -157,13 +168,13 @@ set(TEST_TARGETS
         test_ssm_creator test_ssm_attacher test_mysql
         test_abseil test_role test_role2 test_role_sqlite
         test_role_creator test_role_attacher
-        test_sqlite3 test_handler test_proto
+        test_sqlite3 test_handler test_proto test_connection
 )
 
 foreach (target_name IN LISTS TEST_TARGETS)
     add_executable(${target_name}
             tests/${target_name}.cc
-            ${GENERATED_SRC}
+#            ${GENERATED_SRC}
     )
     target_link_libraries(${target_name} PRIVATE cfl)
 endforeach ()
