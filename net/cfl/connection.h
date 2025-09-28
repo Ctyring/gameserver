@@ -115,6 +115,12 @@ namespace cfl {
         bool check_header(const PacketHeader header);
 
         /**
+         * @brief 设置当前连接状态
+         * @param status 新的连接状态
+         */
+         void set_status(NetStatus status) { status_.store(status); }
+
+        /**
          * @brief 获取当前连接状态
          * @return NetStatus
          */
@@ -152,8 +158,13 @@ namespace cfl {
             conn_data_ = 0;
             status_.store(NetStatus::Init);
             expected_size_ = 0;
-            cur_packet_.clear();
+            data_len_ = 0;
+            data_buffer_.reset();
             while (!send_queue_.empty()) send_queue_.pop();
+        }
+
+        void set_data_handler(std::shared_ptr<DataHandler> handler) {
+            data_handler_ = std::move(handler);
         }
 
     private:
@@ -173,13 +184,15 @@ namespace cfl {
         std::array<char, 8192> read_buf_; ///< 读缓冲区
         std::queue<std::string> send_queue_; ///< 待发送的消息队列
         std::atomic<NetStatus> status_{NetStatus::Init}; ///< 连接状态 todo: 优化内存序
-        std::vector<std::byte> cur_packet_; ///< 半包缓存
+//        std::vector<std::byte> cur_packet_; ///< 半包缓存
         std::size_t expected_size_{0}; ///< 当前包期望大小
         std::uint64_t conn_id_{0}; ///< 连接 ID
         std::uint64_t conn_data_{0}; ///< 连接绑定的数据
         std::size_t data_len_{0}; ///< 当前缓冲区有效数据长度
         bool packet_number_check{true}; ///< 是否启用包序号检查
         std::int32_t check_number{0}; ///< 包序号
+        std::shared_ptr<DataHandler> data_handler_; ///< 数据处理监听
+        std::shared_ptr<SimpleDataBuffer> data_buffer_;///< 数据缓冲
     };
 
 /**
@@ -230,7 +243,8 @@ namespace cfl {
             }
             auto conn = free_connections_.back();
             free_connections_.pop_back();
-            use_connections_.emplace(cur_conn_id_++, conn);
+            use_connections_.emplace(cur_conn_id_, conn);
+            conn->set_conn_id(cur_conn_id_++);
             return conn;
         }
 
@@ -243,6 +257,9 @@ namespace cfl {
             std::scoped_lock lock(mutex_);
             auto it = use_connections_.find(conn_id);
             if (it == use_connections_.end()) {
+                for(auto &c: use_connections_){
+                    spdlog::info("conn_id: {}, conn_id: {}", c.first, c.second->conn_id());
+                }
                 spdlog::error("no connection found");
                 return nullptr;
             }
@@ -264,6 +281,15 @@ namespace cfl {
             it->second->reset();
             free_connections_.push_back(it->second);
             use_connections_.erase(it);
+            return true;
+        }
+
+        bool close_all_connection() {
+            std::scoped_lock lock(mutex_);
+            for (auto &c: use_connections_) {
+                c.second->close();
+                c.second->reset();
+            }
             return true;
         }
 

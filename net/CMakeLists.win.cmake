@@ -131,6 +131,8 @@ set(LIB_SRC
         cfl/playerobj.cc
         cfl/module_base.cc
         cfl/connection.cc
+        cfl/net_engine.cc
+        cfl/buffer.cc
         ${GENERATED_SRC}
 )
 
@@ -171,6 +173,7 @@ set(TEST_TARGETS
         test_abseil test_role test_role2 test_role_sqlite
         test_role_creator test_role_attacher
         test_sqlite3 test_handler test_proto test_connection
+        test_net_engine
 )
 
 foreach (target_name IN LISTS TEST_TARGETS)

@@ -101,94 +101,129 @@ bool Connection::check_header(const cfl::PacketHeader header) {
     return true;
 }
 
-bool Connection::extract_buffer() {
-    if (data_len_ == 0) {
-        return true;
-    }
-
-    auto buf_ptr = read_buf_.data();
-    auto remain = data_len_;
-
-    while (true) {
-        // 1. 补齐半包
-        if (!cur_packet_.empty()) {
-            auto already = cur_packet_.size();
-            auto need = expected_size_ - already;
-            if (remain < need) {
-                // 数据不够，先攒起来
-                cur_packet_.insert(
-                    cur_packet_.end(), reinterpret_cast<std::byte*>(buf_ptr),
-                    reinterpret_cast<std::byte*>(buf_ptr + remain));
-                data_len_ = 0;
-                return true;
-            } else {
-                // 可以补齐完整包
-                cur_packet_.insert(
-                    cur_packet_.end(), reinterpret_cast<std::byte*>(buf_ptr),
-                    reinterpret_cast<std::byte*>(buf_ptr + need));
-                buf_ptr += need;
-                remain -= need;
-                data_len_ = remain;
-
-                // todo: 处理完整包 告诉service
-                //                    on_message(cur_packet_);
-                cur_packet_.clear();
-                expected_size_ = 0;
-            }
-        }
-
-        // 2. 不够一个包头
-        if (remain < sizeof(PacketHeader)) {
-            if (remain > 0 && std::byte(buf_ptr[0]) != std::byte{CODE_VALUE}) {
-                // 首字节校验失败 → 返回 false 触发关闭
-                return false;
-            }
-            // 等待更多数据
-            break;
-        }
-
-        auto* header = reinterpret_cast<const PacketHeader*>(buf_ptr);
-
-        if (!check_header(*header)) {
-            spdlog::error("验证Header失败! ConnID:{} TargetID:{}", conn_id_,
-                          header->target_id);
-            return false;
-        }
-
-        auto packet_size = static_cast<std::size_t>(header->size);
-
-        // 4. 数据不足一个完整包，先缓存
-        if (packet_size > remain && packet_size < read_buf_.size()) {
-            cur_packet_.assign(reinterpret_cast<std::byte*>(buf_ptr),
-                               reinterpret_cast<std::byte*>(buf_ptr + remain));
-            expected_size_ = packet_size;
-            data_len_ = 0;
+// 从接收缓冲区中提取完整的网络数据包并交给上层处理
+// 返回值：true 表示解析正常；false 表示遇到错误（例如非法包头），需要关闭连接
+    bool Connection::extract_buffer() {
+        // 如果当前没有数据，直接返回
+        if (data_len_ == 0) {
             return true;
         }
 
-        // 5. 有完整包
-        if (packet_size <= remain) {
-            std::vector<std::byte> packet(
-                reinterpret_cast<std::byte*>(buf_ptr),
-                reinterpret_cast<std::byte*>(buf_ptr + packet_size));
-            buf_ptr += packet_size;
-            remain -= packet_size;
-            data_len_ = remain;
+        // buf_ptr 指向当前未处理的数据起始地址
+        auto buf_ptr = read_buf_.data();
+        // remain 表示当前剩余的有效字节数
+        auto remain = data_len_;
 
-            //                on_message(packet); // todo: 告诉service
-        } else {
-            // 包太大或非法
-            return false;
+        // 循环尝试解析多个完整数据包
+        while (true) {
+            // ============================================================
+            // 1. 处理半包情况：之前已经收到部分数据，等待拼接完整
+            // ============================================================
+            if (data_buffer_ && data_buffer_->total_length() > 0) {
+                auto already = data_buffer_->total_length();     // 已经存储的字节数
+                auto need = expected_size_ - already;            // 还需要的字节数
+
+                if (remain < need) {
+                    // 数据不足以拼接完整 → 把所有数据先拷贝进去，等待下次
+                    std::memcpy(data_buffer_->buffer().data() + already, buf_ptr, remain);
+                    data_buffer_->set_total_length(already + remain);
+
+                    data_len_ = 0;   // 当前缓冲区的数据都用掉了
+                    return true;     // 等待下次接收数据
+                } else {
+                    // 数据足够补齐完整包
+                    std::memcpy(data_buffer_->buffer().data() + already, buf_ptr, need);
+                    data_buffer_->set_total_length(already + need);
+
+                    buf_ptr += need;     // 向后移动指针
+                    remain -= need;      // 剩余数据减少
+                    data_len_ = remain;  // 更新全局剩余长度
+
+                    // 通知上层：完整包已就绪
+                    data_handler_->on_data_handle(data_buffer_, conn_id());
+
+                    // 释放缓存，准备处理下一个包
+                    data_buffer_.reset();
+                    expected_size_ = 0;
+                }
+            }
+
+            // ============================================================
+            // 2. 数据不足一个包头，无法判断 → 等待更多数据
+            // ============================================================
+            if (remain < sizeof(PacketHeader)) {
+                if (remain > 0 && std::byte(buf_ptr[0]) != std::byte{CODE_VALUE}) {
+                    // 如果剩余数据 > 0，但第一个字节不是合法校验码 → 认为是非法数据
+                    // 返回 false 表示需要关闭连接
+                    return false;
+                }
+                break; // 缓存的数据不足包头大小，跳出循环，等待更多数据
+            }
+
+            // ============================================================
+            // 3. 校验包头
+            // ============================================================
+            auto* header = reinterpret_cast<const PacketHeader*>(buf_ptr);
+
+            if (!check_header(*header)) {
+                // 包头校验失败（如长度非法、校验码错误等）
+                spdlog::error("验证Header失败! ConnID:{} TargetID:{}", conn_id_, header->target_id);
+                return false;
+            }
+
+            auto packet_size = static_cast<std::size_t>(header->size);
+
+            // ============================================================
+            // 4. 数据不足一个完整包 → 启动半包缓存
+            // ============================================================
+            if (packet_size > remain && packet_size < read_buf_.size()) {
+                // 分配一个缓存区，大小为目标包大小
+                data_buffer_ = std::make_shared<SimpleDataBuffer>(static_cast<std::int32_t>(packet_size));
+
+                // 把当前剩余的数据拷贝进去
+                std::memcpy(data_buffer_->buffer().data(), buf_ptr, remain);
+                data_buffer_->set_total_length(static_cast<std::int32_t>(remain));
+
+                // 保存期望的完整包大小
+                expected_size_ = static_cast<std::int32_t>(packet_size);
+
+                data_len_ = 0;  // 当前缓冲区用尽
+                return true;    // 等待后续数据来拼接
+            }
+
+            // ============================================================
+            // 5. 已经收到了完整包
+            // ============================================================
+            if (packet_size <= remain) {
+                // 分配一个新 buffer 存放完整包
+                auto buffer = std::make_shared<SimpleDataBuffer>(static_cast<std::int32_t>(packet_size));
+
+                // 把完整的数据拷贝进去
+                std::memcpy(buffer->buffer().data(), buf_ptr, packet_size);
+                buffer->set_total_length(static_cast<std::int32_t>(packet_size));
+
+                // 移动指针，减少剩余数据
+                buf_ptr += packet_size;
+                remain -= packet_size;
+                data_len_ = remain;
+
+                // 通知上层：完整包已就绪
+                data_handler_->on_data_handle(buffer, conn_id());
+            } else {
+                // 包声明的大小超过缓冲区容量 → 认为是非法数据
+                return false;
+            }
         }
-    }
 
-    // 6. 收尾：把剩余数据前移
-    if (remain > 0) {
-        std::memmove(read_buf_.data(), buf_ptr, remain);
-    }
-    data_len_ = remain;
+        // ============================================================
+        // 6. 收尾：把剩余数据前移，确保 read_buf_ 中数据是连续的
+        // ============================================================
+        if (remain > 0) {
+            std::memmove(read_buf_.data(), buf_ptr, remain);
+        }
+        data_len_ = remain;
 
-    return true;
-}
+        return true; // 解析成功
+    }
 
 }  // namespace cfl
