@@ -48,10 +48,10 @@ int main() {
     }
 
     // 等待连接建立
-    std::this_thread::sleep_for(std::chrono::seconds(1));
-
+    std::this_thread::sleep_for(std::chrono::seconds(2));
     // 发送一条消息
     std::string msg = "Hello NetEngine!";
+    spdlog::info("Sending message conn_id: {}", clientConn->conn_id());
     NetEngine::instance().send_message(
             clientConn->conn_id(),
             1001,       // msgId

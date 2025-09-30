@@ -20,7 +20,6 @@ namespace cfl {
                                                                                       port));
 
         wait_for_connect();
-        // todo: 改成service
         worker_thread_ = std::jthread([this]() {
             io_context_.run();
         });
@@ -28,7 +27,6 @@ namespace cfl {
     }
 
     bool NetEngine::stop() {
-        // todo: 改成service
         io_context_.stop();
         acceptor_->close();
         acceptor_.reset();
@@ -60,13 +58,13 @@ namespace cfl {
     std::shared_ptr<Connection> NetEngine::connect_async(const std::string &ip, uint16_t port){
         auto conn = ConnectionMgr::instance().get_new_connection();
         if (conn == nullptr) {
+            spdlog::error("Failed to create connection");
             return nullptr;
         }
 
         conn->set_data_handler(buffer_handler_);
 
         // 解析器
-        // todo: 改成 service
         auto resolver = asio::ip::tcp::resolver(io_context_);
         // 异步解析地址
         asio::ip::tcp::resolver::results_type endpoints = resolver.resolve(ip, std::to_string(port));

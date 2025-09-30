@@ -1,7 +1,8 @@
 #include "buffer.h"
 
 namespace cfl{
-    DataBuffer* BufferAllocator::allocate_buffer(int size) {
+    std::shared_ptr<DataBuffer> BufferAllocator::allocate_buffer(int size) {
+        spdlog::info("allocate buffer size:{}", size);
         if(size < 64)
         {
             return buffer_manager_64b.allocate_buffer();

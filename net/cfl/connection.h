@@ -112,7 +112,7 @@ namespace cfl {
          * @param header 包头
          * @return 包头是否合法
          */
-        bool check_header(const PacketHeader header);
+        bool check_header(const PacketHeader& header);
 
         /**
          * @brief 设置当前连接状态
@@ -185,6 +185,7 @@ namespace cfl {
         std::queue<std::string> send_queue_; ///< 待发送的消息队列
         std::atomic<NetStatus> status_{NetStatus::Init}; ///< 连接状态 todo: 优化内存序
 //        std::vector<std::byte> cur_packet_; ///< 半包缓存
+
         std::size_t expected_size_{0}; ///< 当前包期望大小
         std::uint64_t conn_id_{0}; ///< 连接 ID
         std::uint64_t conn_data_{0}; ///< 连接绑定的数据
@@ -192,7 +193,7 @@ namespace cfl {
         bool packet_number_check{true}; ///< 是否启用包序号检查
         std::int32_t check_number{0}; ///< 包序号
         std::shared_ptr<DataHandler> data_handler_; ///< 数据处理监听
-        std::shared_ptr<SimpleDataBuffer> data_buffer_;///< 数据缓冲
+        std::shared_ptr<DataBuffer> data_buffer_;///< 数据缓冲
     };
 
 /**

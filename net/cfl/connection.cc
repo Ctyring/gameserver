@@ -1,105 +1,108 @@
 #include "connection.h"
+#include "cfl.h"
+#include "buffer.h"
 
 namespace cfl {
-Connection::Connection(asio::io_context& io_context)
-    : socket_(io_context), strand_(asio::make_strand(io_context)) {
-    // todo: 初始化一些参数
-}
+    Connection::Connection(asio::io_context &io_context)
+            : socket_(io_context), strand_(asio::make_strand(io_context)) {
+        // todo: 初始化一些参数
+    }
 
-Connection::~Connection() {}
+    Connection::~Connection() {}
 
-void Connection::do_read() {
-    auto self = shared_from_this();
-    socket_.async_read_some(
-        asio::buffer(read_buf_),
-        asio::bind_executor(
-            strand_, [self](std::error_code ec, std::size_t length) {
-                if (!self->extract_buffer()) {
-                    self->close();
-                    return;
-                }
-                if (!ec && length > 0) {
-                    std::string data(self->read_buf_.data(), length);
-                    std::cout << "[Recv] " << data << std::endl;
-                    self->do_read();
-                } else {
-                    self->close();
-                }
-            }));
-}
+    void Connection::do_read() {
+        auto self = shared_from_this();
+        socket_.async_read_some(
+                asio::buffer(read_buf_),
+                asio::bind_executor(
+                        strand_, [self](std::error_code ec, std::size_t length) {
+                            if (!self->extract_buffer()) {
+                                self->close();
+                                return;
+                            }
+                            if (!ec && length > 0) {
+                                std::string data(self->read_buf_.data(), length);
+                                std::cout << "[Recv] " << data << std::endl;
+                                self->do_read();
+                            } else {
+                                self->close();
+                            }
+                        }));
+    }
 
-void Connection::do_write() {
-    auto self = shared_from_this();
-    asio::async_write(
-        socket_, asio::buffer(send_queue_.front()),
-        asio::bind_executor(strand_,
-                            [self](std::error_code ec, std::size_t /*length*/) {
-                                if (!ec) {
-                                    self->send_queue_.pop();
-                                    if (!self->send_queue_.empty()) {
-                                        self->do_write();
-                                    }
-                                } else {
-                                    self->close();
-                                }
-                            }));
-}
+    void Connection::do_write() {
+        auto self = shared_from_this();
+        asio::async_write(
+                socket_, asio::buffer(send_queue_.front()),
+                asio::bind_executor(strand_,
+                                    [self](std::error_code ec, std::size_t /*length*/) {
+                                        if (!ec) {
+                                            self->send_queue_.pop();
+                                            if (!self->send_queue_.empty()) {
+                                                self->do_write();
+                                            }
+                                        } else {
+                                            self->close();
+                                        }
+                                    }));
+    }
 
-void Connection::close() {
-    asio::post(strand_, [self = shared_from_this()]() {
-        if (self->status_ != NetStatus::Closed) {
-            self->status_ = NetStatus::Closing;
-            asio::error_code ec;
-            self->socket_.close(ec);
-            self->status_ = NetStatus::Closed;
+    void Connection::close() {
+        asio::post(strand_, [self = shared_from_this()]() {
+            if (self->status_ != NetStatus::Closed) {
+                self->status_ = NetStatus::Closing;
+                asio::error_code ec;
+                self->socket_.close(ec);
+                self->status_ = NetStatus::Closed;
+                
+                // todo: 通知ConnectionMgr
+                if(self->data_handler_)
+                    self->data_handler_->on_close_connect(self->conn_id());
+            }
+        });
+    }
 
-            // todo: 通知service
-            // todo: 通知ConnectionMgr
+    bool Connection::check_header(const cfl::PacketHeader& header) {
+        if (header.check_code != CODE_VALUE) [[unlikely]] {
+            spdlog::info("验证Header失败! check_code error ConnID:{} TargetID:{}",
+                         conn_id_, header.target_id);
+            return false;
         }
-    });
-}
 
-bool Connection::check_header(const cfl::PacketHeader header) {
-    if (header.check_code != CODE_VALUE) [[unlikely]] {
-        spdlog::info("验证Header失败! check_code error ConnID:{} TargetID:{}",
-                     conn_id_, header.target_id);
-        return false;
-    }
+        constexpr int32_t kMaxPacketSize = 1024 * 1024;
+        if (header.size <= 0 || header.size > kMaxPacketSize) [[unlikely]] {
+            spdlog::info("验证Header失败! size error ConnID:{} TargetID:{}",
+                         conn_id_, header.target_id);
+            return false;
+        }
 
-    constexpr int32_t kMaxPacketSize = 1024 * 1024;
-    if (header.size <= 0 || header.size > kMaxPacketSize) [[unlikely]] {
-        spdlog::info("验证Header失败! size error ConnID:{} TargetID:{}",
-                     conn_id_, header.target_id);
-        return false;
-    }
+        if (header.msg_id <= 0 || header.msg_id > 399999) [[unlikely]] {
+            spdlog::info("验证Header失败! msg_id error ConnID:{} TargetID:{}",
+                         conn_id_, header.target_id);
+            return false;
+        }
 
-    if (header.msg_id <= 0 || header.msg_id > 399999) [[unlikely]] {
-        spdlog::info("验证Header失败! msg_id error ConnID:{} TargetID:{}",
-                     conn_id_, header.target_id);
-        return false;
-    }
+        if (packet_number_check) [[likely]] {
+            const int32_t packetCheckNo =
+                    header.packet_id - (header.msg_id ^ header.size);
 
-    if (packet_number_check) [[likely]] {
-        const int32_t packetCheckNo =
-            header.packet_id - (header.msg_id ^ header.size);
+            if (packetCheckNo <= 0) [[unlikely]] {
+                spdlog::info("验证Header失败! checkNo error ConnID:{} TargetID:{}",
+                             conn_id_, header.target_id);
+                return false;
+            }
 
-        if (packetCheckNo <= 0) [[unlikely]] {
+            if (check_number == 0 || check_number == packetCheckNo) [[likely]] {
+                return true;
+            }
+
             spdlog::info("验证Header失败! checkNo error ConnID:{} TargetID:{}",
                          conn_id_, header.target_id);
             return false;
         }
 
-        if (check_number == 0 || check_number == packetCheckNo) [[likely]] {
-            return true;
-        }
-
-        spdlog::info("验证Header失败! checkNo error ConnID:{} TargetID:{}",
-                     conn_id_, header.target_id);
-        return false;
+        return true;
     }
-
-    return true;
-}
 
 // 从接收缓冲区中提取完整的网络数据包并交给上层处理
 // 返回值：true 表示解析正常；false 表示遇到错误（例如非法包头），需要关闭连接
@@ -163,7 +166,7 @@ bool Connection::check_header(const cfl::PacketHeader header) {
             // ============================================================
             // 3. 校验包头
             // ============================================================
-            auto* header = reinterpret_cast<const PacketHeader*>(buf_ptr);
+            auto *header = reinterpret_cast<const PacketHeader *>(buf_ptr);
 
             if (!check_header(*header)) {
                 // 包头校验失败（如长度非法、校验码错误等）
@@ -178,11 +181,10 @@ bool Connection::check_header(const cfl::PacketHeader header) {
             // ============================================================
             if (packet_size > remain && packet_size < read_buf_.size()) {
                 // 分配一个缓存区，大小为目标包大小
-                data_buffer_ = std::make_shared<SimpleDataBuffer>(static_cast<std::int32_t>(packet_size));
-
+                data_buffer_ = BufferAllocator::instance().allocate_buffer(packet_size);
                 // 把当前剩余的数据拷贝进去
                 std::memcpy(data_buffer_->buffer().data(), buf_ptr, remain);
-                data_buffer_->set_total_length(static_cast<std::int32_t>(remain));
+                data_buffer_->set_total_length(static_cast<std::uint32_t>(remain));
 
                 // 保存期望的完整包大小
                 expected_size_ = static_cast<std::int32_t>(packet_size);
