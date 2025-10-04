@@ -1,284 +1,186 @@
-syntax = "proto3";
+syntax = "proto3";                     // 指定 proto 语法版本为 proto3
+import "base.proto";                // 导入公共基础消息定义
 
-//
-// 角色基础信息
-//
-message RoleData {
-    uint64  account_id    = 1;  // 账号ID（唯一标识账号）
-    uint64  role_id       = 2;  // 角色ID（唯一标识角色）
-    int32   career_id     = 3;  // 职业ID
-    int32   level         = 4;  // 当前等级
-    int64   exp           = 5;  // 当前经验值
-    string  name          = 6;  // 角色名字
-    int32   lang_id       = 7;  // 语言/地区ID
-    int32   vip_level     = 8;  // VIP等级
-    int32   vip_exp       = 9;  // VIP经验值
-    int64   fight_value   = 10; // 战斗力
-    int32   city_copy_id  = 11; // 当前所在副本ID（城市场景）
-    repeated int64 action       = 12; // 最近的行为记录（动作ID列表）
-    repeated int64 action_time  = 13; // 行为发生的时间戳（与action一一对应）
-    uint64  create_time   = 14; // 角色创建时间
-    uint64  logon_time    = 15; // 最近登录时间
-    uint64  logoff_time   = 16; // 最近登出时间
-    uint64  guild_id      = 17; // 所属公会ID
-    int32   channel       = 18; // 渠道ID（来源渠道）
-    uint32  online_time   = 19; // 累计在线时长（单位：秒）
-}
-
-//
-// 背包
-//
-enum BindType {
-    BIND_NONE = 0; // 未绑定
-    BIND_YES  = 1; // 已绑定
-}
-
-enum ItemStatus {
-    ITEM_NORMAL  = 0; // 正常物品
-    ITEM_DELETED = 1; // 已删除（不可用）
-}
-
+// ========================== 背包物品 ==========================
 message BagItem {
-    uint64 guid       = 1; // 背包格子唯一标识（格子GUID）
-    uint64 role_id    = 2; // 所属角色ID
-    uint64 item_guid  = 3; // 物品唯一GUID
-    uint32 item_id    = 4; // 物品ID（配置表ID）
-    int64  count      = 5; // 物品数量
-    BindType bind     = 6; // 是否绑定
-    ItemStatus status = 7; // 物品状态
+    uint64   guid         = 1;          // 唯一标识符（物品在背包中的唯一ID）
+    uint64   item_guid    = 2;          // 道具模板Guid（区分同类不同实例）
+    int32    item_id      = 3;          // 道具ID（静态表配置的编号）
+    int64    item_num     = 4;          // 道具数量
+    bool     bind         = 5;          // 是否绑定（true=绑定，false=非绑定）
 }
 
-message BagItems {
-    repeated BagItem items = 1; // 背包内的物品列表
+message BagChangeNty {
+    repeated BagItem change_list = 1;   // 变更的物品列表（新增或修改）
+    repeated uint64  remove_list = 2;   // 被移除的物品ID列表
 }
 
-//
-// 副本
-//
+// ========================== 装备物品 ==========================
+message EquipItem {
+    uint64   guid           = 1;        // 唯一标识符
+    int32    equip_id       = 2;        // 装备ID
+    int32    strength_lvl   = 3;        // 强化等级
+    int32    refine_level   = 4;        // 精炼等级
+    int32    star_level     = 5;        // 星级
+    int32    refine_exp     = 6;        // 精炼经验
+    int32    star_exp       = 7;        // 星级经验
+    int32    is_using       = 8;        // 是否上阵（0=否，1=是）
+}
+
+message EquipChangeNty {
+    repeated EquipItem change_list = 1; // 装备变化列表
+    repeated uint64    remove_list = 2; // 移除的装备ID
+}
+
+// ========================== 宝石物品 ==========================
+message GemItem {
+    uint64   guid           = 1;        // 唯一标识符
+    int32    gem_id         = 2;        // 宝石ID
+    int32    strength_lvl   = 3;        // 强化等级
+    int32    refine_level   = 4;        // 精炼等级
+    int32    star_level     = 5;        // 星级
+    int32    refine_exp     = 6;        // 精炼经验
+    int32    star_exp       = 7;        // 星级经验
+    int32    pos            = 8;        // 镶嵌位置
+}
+
+message GemChangeNty {
+    repeated GemItem change_list = 1;   // 宝石变化列表
+    repeated uint64  remove_list = 2;   // 移除的宝石ID
+}
+
+// ========================== 宠物物品 ==========================
+message PetItem {
+    uint64 guid          = 1;           // 唯一标识符
+    int32  pet_id        = 2;           // 宠物ID
+    int32  strength_lvl  = 3;           // 强化等级
+    int32  refine_level  = 4;           // 精炼等级
+    int32  star_level    = 5;           // 星级
+    int32  refine_exp    = 6;           // 精炼经验
+    int32  star_exp      = 7;           // 星级经验
+    int32  is_using      = 8;           // 是否上阵
+}
+
+message PetChangeNty {
+    repeated PetItem change_list = 1;   // 宠物变化列表
+    repeated uint64  remove_list = 2;   // 移除的宠物ID
+}
+
+// ========================== 伙伴物品 ==========================
+message PartnerItem {
+    uint64 guid          = 1;           // 唯一标识符
+    int32  partner_id    = 2;           // 伙伴ID
+    int32  strength_lvl  = 3;           // 强化等级
+    int32  refine_level  = 4;           // 精炼等级
+    int32  star_level    = 5;           // 星级
+    int32  refine_exp    = 6;           // 精炼经验
+    int32  star_exp      = 7;           // 星级经验
+    int32  set_pos       = 8;           // 上阵位置
+}
+
+message PartnerChangeNty {
+    repeated PartnerItem change_list = 1; // 伙伴变化列表
+    repeated uint64      remove_list = 2; // 移除的伙伴ID
+}
+
+// ========================== 坐骑物品 ==========================
+message MountItem {
+    uint64 guid          = 1;           // 唯一标识符
+    int32  mount_id      = 2;           // 坐骑ID
+    int32  strength_lvl  = 3;           // 强化等级
+    int32  refine_level  = 4;           // 精炼等级
+    int32  star_level    = 5;           // 星级
+    int32  refine_exp    = 6;           // 精炼经验
+    int32  star_exp      = 7;           // 星级经验
+    int32  is_using      = 8;           // 是否出战
+}
+
+message MountChangeNty {
+    repeated MountItem change_list = 1; // 坐骑变化列表
+    repeated uint64    remove_list = 2; // 移除的坐骑ID
+}
+
+// ========================== 邮件 ==========================
+message MailItem {
+    uint64 guid           = 1;          // 唯一标识符
+    int32  mail_type      = 2;          // 邮件类型
+    int32  status         = 3;          // 邮件状态（0=未读，1=已读等）
+    string title          = 4;          // 邮件标题
+    string content        = 5;          // 邮件内容
+    string sender         = 6;          // 发件人
+    repeated int32 item_id  = 8;        // 附件物品ID列表
+    repeated int32 item_num = 9;        // 附件物品数量列表
+}
+
+message MailChangeNty {
+    repeated MailItem change_list = 1;  // 邮件变化列表
+    repeated uint64   remove_list = 2;  // 移除的邮件ID
+}
+
+// ========================== 任务 ==========================
+message TaskItem {
+    uint32  task_id = 1;                // 任务ID
+}
+
+message TaskChangeNty {
+    repeated TaskItem change_list = 1;  // 任务变化列表
+    repeated uint64   remove_list = 2;  // 移除的任务ID
+}
+
+// ========================== 副本与章节 ==========================
 message CopyItem {
-    uint64 role_id     = 1; // 所属角色ID
-    uint32 copy_id     = 2; // 副本ID
-    int32  star_num    = 3; // 通关星级
-    int32  battle_cnt  = 4; // 已挑战次数
-    int32  reset_cnt   = 5; // 已重置次数
-    uint64 battle_time = 6; // 最近挑战时间
-    uint64 reset_time  = 7; // 最近重置时间
+    uint32  copy_id    = 1;             // 副本ID
+    int32   star_num   = 2;             // 获得的星数
+    int32   battle_cnt = 3;             // 挑战次数
+    int32   reset_cnt  = 4;             // 重置次数
 }
 
 message ChapterItem {
-    uint64 role_id     = 1; // 所属角色ID
-    uint32 copy_type   = 2; // 副本类型
-    uint32 chapter_id  = 3; // 章节ID
-    uint32 star_award  = 4; // 星级奖励领取状态
-    uint32 scene_award = 5; // 场景奖励领取状态
+    uint32  chapter_id  = 1;            // 章节ID
+    uint32  star_award  = 2;            // 星数奖励领取状态
+    uint32  scene_award = 3;            // 场景奖励领取状态
+    uint32  copy_type   = 4;            // 副本类型
 }
 
-message Copies {
-    repeated CopyItem copies      = 1; // 副本进度列表
-    repeated ChapterItem chapters = 2; // 章节奖励列表
+// ========================== 行为记录 ==========================
+message ActionItem {
+    int64 action = 1;                   // 行为类型
+    int64 actime = 2;                   // 行为发生时间戳
 }
 
-//
-// 装备
-//
-message EquipItem {
-    uint64 role_id       = 1; // 所属角色ID
-    uint64 guid          = 2; // 装备唯一GUID
-    int32  equip_id      = 3; // 装备ID（配置表ID）
-    int32  strength_lvl  = 4; // 强化等级
-    int32  refine_level  = 5; // 精炼等级
-    int32  star_level    = 6; // 星级
-    int32  refine_exp    = 7; // 精炼经验
-    int32  star_exp      = 8; // 升星经验
-    bool   is_using      = 9; // 是否正在穿戴
+// ========================== 引导项 ==========================
+message GuideItem {
+    int32 id = 1;                       // 引导步骤ID
 }
 
-message Equipments {
-    repeated EquipItem items = 1; // 装备列表
+// ========================== 技能变化 ==========================
+message SkillChangeNty {
+    repeated SkillItem change_list = 1; // 技能变化列表
+    repeated uint64    remove_list = 2; // 移除的技能ID
 }
 
-//
-// 宝石
-//
-message GemItem {
-    uint64 role_id       = 1; // 所属角色ID
-    uint64 guid          = 2; // 宝石唯一GUID
-    int32  gem_id        = 3; // 宝石ID（配置表ID）
-    int32  strength_lvl  = 4; // 强化等级
-    int32  refine_level  = 5; // 精炼等级
-    int32  star_level    = 6; // 星级
-    int32  refine_exp    = 7; // 精炼经验
-    int32  star_exp      = 8; // 升星经验
-    int32  pos           = 9; // 镶嵌位置
-}
-
-message Gems {
-    repeated GemItem items = 1; // 宝石列表
-}
-
-//
-// 技能
-//
-message DBSkillItem {
-    uint64 role_id   = 1; // 所属角色ID
-    uint32 skill_id  = 2; // 技能ID
-    int32  level     = 3; // 技能等级
-    int32  key_pos   = 4; // 快捷栏位置
-}
-
-message Skills {
-    repeated DBSkillItem items = 1; // 技能列表
-}
-
-//
-// 宠物
-//
-message PetItem {
-    uint64 role_id       = 1; // 所属角色ID
-    uint64 guid          = 2; // 宠物唯一GUID
-    int32  pet_id        = 3; // 宠物ID（配置表ID）
-    int32  strength_lvl  = 4; // 强化等级
-    int32  refine_level  = 5; // 精炼等级
-    int32  star_level    = 6; // 星级
-    bool   is_using      = 7; // 是否出战
-}
-
-message Pets {
-    repeated PetItem items = 1; // 宠物列表
-}
-
-//
-// 坐骑
-//
-message MountItem {
-    uint64 role_id       = 1; // 所属角色ID
-    uint64 guid          = 2; // 坐骑唯一GUID
-    int32  mount_id      = 3; // 坐骑ID（配置表ID）
-    int32  strength_lvl  = 4; // 强化等级
-    int32  refine_level  = 5; // 精炼等级
-    int32  star_level    = 6; // 星级
-    bool   is_using      = 7; // 是否正在骑乘
-}
-
-message Mounts {
-    repeated MountItem items = 1; // 坐骑列表
-}
-
-//
-// 伙伴
-//
-message PartnerItem {
-    uint64 role_id       = 1; // 所属角色ID
-    uint64 guid          = 2; // 伙伴唯一GUID
-    int32  partner_id    = 3; // 伙伴ID（配置表ID）
-    int32  strength_lvl  = 4; // 强化等级
-    int32  refine_level  = 5; // 精炼等级
-    int32  star_level    = 6; // 星级
-    int32  set_pos       = 7; // 阵位位置
-}
-
-message Partners {
-    repeated PartnerItem items = 1; // 伙伴列表
-}
-
-//
-// 任务
-//
-message TaskItem {
-    uint64 role_id   = 1; // 所属角色ID
-    uint32 task_id   = 2; // 任务ID
-    int32  status    = 3; // 任务状态（进行中/完成/领取）
-    int32  progress  = 4; // 任务进度
-}
-
-message Tasks {
-    repeated TaskItem items = 1; // 任务列表
-}
-
-//
-// 邮件
-//
-message MailItem {
-    uint64 role_id   = 1;  // 所属角色ID
-    uint64 guid      = 2;  // 邮件唯一GUID
-    uint64 group_id  = 3;  // 邮件分组ID
-    uint64 time      = 4;  // 邮件发送时间
-    uint64 sender_id = 5;  // 发送者角色ID
-    string sender    = 6;  // 发送者名字
-    uint32 mail_type = 7;  // 邮件类型
-    uint32 status    = 8;  // 邮件状态（已读/未读/已删除）
-    string title     = 9;  // 邮件标题
-    string content   = 10; // 邮件正文
-    bytes  items     = 11; // 附件物品（序列化数据）
-}
-
-message Mails {
-    repeated MailItem items = 1; // 邮件列表
-}
-
-//
-// 活动
-//
-message ActivityItem {
-    uint64 role_id       = 1; // 所属角色ID
-    uint32 activity_id   = 2; // 活动ID
-    uint32 activity_type = 3; // 活动类型
-    uint32 join_time     = 4; // 参加时间
-    uint32 data_len      = 5; // 数据长度
-    bytes  data          = 6; // 活动相关数据
-}
-
-message Activities {
-    repeated ActivityItem items = 1; // 活动列表
-}
-
-//
-// 计数器
-//
-message CounterItem {
-    uint64 role_id    = 1; // 所属角色ID
-    uint32 counter_id = 2; // 计数器ID
-    uint32 index      = 3; // 索引（用于区分多条数据）
-    int64  value      = 4; // 当前值
-    uint64 time       = 5; // 时间戳
-    uint32 param1     = 6; // 额外参数1
-    uint32 param2     = 7; // 额外参数2
-}
-
-message Counters {
-    repeated CounterItem items = 1; // 计数器列表
-}
-
-//
-// 好友
-//
-message FriendItem {
-    uint64 role_id   = 1; // 所属角色ID
-    uint64 friend_id = 2; // 好友角色ID
-}
-
-message Friends {
-    repeated FriendItem items = 1; // 好友列表
-}
-
-//
-// 登录应答
-//
+// ========================== 登录返回 ==========================
 message RoleLoginAck {
-    uint32      ret_code     = 1;  // 返回码（0表示成功，非0表示错误码）
-    uint64      role_id      = 2;  // 登录角色ID
-    RoleData    role_data    = 3;  // 角色基本信息
-    BagItems    bag_items    = 4;  // 背包数据
-    Copies      copies       = 5;  // 副本数据
-    Equipments  equipments   = 6;  // 装备数据
-    Gems        gems         = 7;  // 宝石数据
-    Pets        pets         = 8;  // 宠物数据
-    Partners    partners     = 9;  // 伙伴数据
-    Tasks       tasks        = 10; // 任务数据
-    Mails       mails        = 11; // 邮件数据
-    Mounts      mounts       = 12; // 坐骑数据
-    Activities  activities   = 13; // 活动数据
-    Counters    counters     = 14; // 计数器数据
-    Friends     friends      = 15; // 好友数据
-    Skills      skills       = 16; // 技能数据
+    uint32   ret_code       = 1;        // 返回码（0=成功，非0=错误码）
+    uint64   account_id     = 2;        // 账号ID
+    uint64   role_id        = 3;        // 角色ID
+    int32    carrer         = 4;        // 职业
+    uint32    level          = 5;        // 等级
+    int64    exp            = 6;        // 经验
+    string   name           = 7;        // 角色名
+    int32    vip_lvl        = 8;        // VIP等级
+    int32    vip_exp        = 9;        // VIP经验
+    int64    fight_value    = 10;       // 战斗力
+    repeated ActionItem  action_list   = 11; // 行为记录
+    repeated EquipItem   equip_list    = 12; // 装备列表
+    repeated GemItem     gem_list      = 13; // 宝石列表
+    repeated PetItem     pet_list      = 14; // 宠物列表
+    repeated PartnerItem partner_list  = 15; // 伙伴列表
+    repeated MountItem   mount_list    = 16; // 坐骑列表
+    repeated BagItem     bag_item_list = 17; // 背包物品列表
+    repeated MailItem    mail_list     = 18; // 邮件列表
+    repeated TaskItem    task_list     = 19; // 任务列表
+    repeated CopyItem    copy_list     = 20; // 副本列表
+    repeated ChapterItem chapter_list  = 21; // 章节列表
+    repeated SkillItem   skill_list    = 22; // 技能列表
 }

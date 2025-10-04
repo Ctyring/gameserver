@@ -5,6 +5,9 @@
 int main() {
     // 初始化日志系统，加载 config.yaml
     cfl::Config::Init();
+//    cfl::Config::TestGet();
+//    cfl::Config::TestGet();
+//    cfl::Config::TestGet();
     // 获取默认 logger，默认是第一个配置的 logger
     auto default_logger = spdlog::default_logger();
 
@@ -13,7 +16,7 @@ int main() {
     default_logger->warn("This is an warn message from the default logger.");
 
     // 获取第二个 logger，名字叫 "audit"
-    auto audit_logger = spdlog::get("main");
+    auto audit_logger = spdlog::get("audit");
     if (audit_logger) {
         audit_logger->warn("Audit logger warning message.");
         audit_logger->error("Audit logger error message.");
@@ -28,6 +31,6 @@ int main() {
 
     // 让异步日志线程flush下（可选）
     spdlog::shutdown();
-
+    std::this_thread::sleep_for(std::chrono::seconds(10));
     return 0;
 }

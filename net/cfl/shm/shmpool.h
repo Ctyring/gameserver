@@ -18,8 +18,10 @@ namespace cfl::shm {
         RoleData,
         End,
     };
+    using SharedMemoryManagerBasePtr = std::shared_ptr<SharedMemoryManagerBase>;
+//    using SharedMemoryManagerBasePtr = SharedMemoryManagerBase*;
 
-    class CFL_API DataPoolManager {
+    class DataPoolManager {
     public:
         /**
          * @brief 获取 DataPoolManager 的单例实例
@@ -50,7 +52,7 @@ namespace cfl::shm {
          * @param index 共享内存池索引
          * @return 指向共享内存基类的指针，若失败则返回 nullptr
          */
-         SharedMemoryManagerBase* get_shared_pool(SHMTYPE index);
+        SharedMemoryManagerBasePtr get_shared_pool(SHMTYPE index);
 
     private:
         /// @brief 私有构造函数，确保单例模式
@@ -67,7 +69,7 @@ namespace cfl::shm {
 
     private:
         /// @brief 存放共享内存对象池的数组
-        std::vector<std::unique_ptr<SharedMemoryManagerBase>> data_object_pools_;
+        std::vector<SharedMemoryManagerBasePtr> data_object_pools_;
 
         /// @brief 每页共享内存大小（字节）
         std::uint32_t shared_page_size_ = 0;
@@ -81,19 +83,27 @@ namespace cfl::shm {
      * @param allocate_new 是否分配新的内存块（默认为 true）
      * @return 指向创建对象的指针，若失败则返回 nullptr
      */
-//    template<class T>
-//    T *create_object(SHMTYPE index, bool allocate_new = true) {
-//        SharedMemoryManagerBase *ssm = DataPoolManager::instance().get_shared_pool(index);
-//        if (!ssm) {
-//            spdlog::get("sys")->error("CreateObject 错误: SharedMemoryBase 为空");
-//            return nullptr;
-//        }
-//
-//        T *object = static_cast<T *>(ssm->allocate_object(allocate_new));
-//        if (!object) {
-//            spdlog::get("sys")->error("CreateObject 错误, 原因: %s", cfl::shm::get_last_error_str(cfl::shm::get_last_error()).c_str());
-//
-//        }
-//        return object;
-//    }
+    template<class T>
+    std::shared_ptr<T> create_object(SHMTYPE index, bool allocate_new = true) {
+        SharedMemoryManagerBasePtr ssm = DataPoolManager::instance().get_shared_pool(index);
+        if (!ssm) {
+            spdlog::error("CreateObject 错误: SharedMemoryBase 为空");
+            return nullptr;
+        }
+        spdlog::error("CreateObject: {}", typeid(T).name());
+        auto x = static_cast<T*>(ssm->allocate_object(allocate_new).value());
+        spdlog::error("CreateObject ok: {}", typeid(T).name());
+        std::shared_ptr<T> object(x,
+                [](T* p) {
+                    if (p) {
+                        p->~T(); // 调用析构函数，但不释放内存，因为共享内存的分配由 pool 管理
+                    }
+                }
+        );
+
+        if (!object) {
+            spdlog::get("sys")->error("CreateObject 错误, 原因: %s", cfl::shm::get_last_error_str(cfl::shm::get_last_error()).c_str());
+        }
+        return object;
+    }
 }

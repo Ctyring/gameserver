@@ -23,7 +23,7 @@
 # %p 进程名（部分平台支持）
 loggers:
   - name: "sys"
-    async: true
+    async: false
     queue_size: 8192
     thread_count: 1
     overflow_policy: block
@@ -32,9 +32,9 @@ loggers:
     sinks:
       - type: console
         color: true
-      - type: file
-        path: "logs/main.log"
-        truncate: false
+#      - type: file
+#        path: "logs/main.log"
+#        truncate: false
 
   - name: "audit"
     async: false

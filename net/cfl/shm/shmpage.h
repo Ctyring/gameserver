@@ -69,6 +69,14 @@ namespace cfl::shm {
         char *raw_data = nullptr;                  ///< 指向共享内存原始数据
         MemoryBlockHeader *block_headers = nullptr;///< 块头数组起始地址
         std::optional<ShmHandle> handle{};         ///< 平台相关的共享内存句柄
+
+        SharedMemoryPage() = default;
+        // 禁止拷贝构造/拷贝赋值
+        SharedMemoryPage(const SharedMemoryPage&) = default;
+        SharedMemoryPage& operator=(const SharedMemoryPage&) = default;
+        // 允许移动（默认）
+        SharedMemoryPage(SharedMemoryPage&&) noexcept = default;
+        SharedMemoryPage& operator=(SharedMemoryPage&&) noexcept = default;
     };
 
 /**
@@ -113,15 +121,15 @@ namespace cfl::shm {
         using BlockRef = std::reference_wrapper<MemoryBlockHeader>;
 
         /// 映射表：所有块头
-        using BlockMap = std::unordered_map<std::size_t, BlockRef>;
+        using BlockMap = std::unordered_map<std::size_t, MemoryBlockHeader*>;
         BlockMap block_map_;
 
         /// 映射表：已使用块
-        using UsedBlockMap = std::unordered_map<void *, BlockRef>;
+        using UsedBlockMap = std::unordered_map<void *, MemoryBlockHeader*>;
         UsedBlockMap used_blocks_;
 
         /// 映射表：空闲块
-        using FreeBlockMap = std::unordered_map<std::size_t, BlockRef>;
+        using FreeBlockMap = std::unordered_map<std::size_t, MemoryBlockHeader*>;
         FreeBlockMap free_blocks_;
 
     private:
@@ -142,7 +150,7 @@ namespace cfl::shm {
         /**
          * @brief 初始化块映射表
          */
-        void initialize_block_map(){}
+        void initialize_block_map();
 
         /**
          * @brief 是否是首次创建共享内存

@@ -87,6 +87,7 @@ find_package(SQLite3 REQUIRED)
 find_package(protobuf CONFIG REQUIRED)
 set(PROTO_FILES
         ${CMAKE_SOURCE_DIR}/cfl/protos/base.proto
+        ${CMAKE_SOURCE_DIR}/cfl/protos/login_db.proto
         ${CMAKE_SOURCE_DIR}/cfl/protos/login.proto
         ${CMAKE_SOURCE_DIR}/cfl/protos/game.proto
 )
@@ -129,10 +130,11 @@ set(LIB_SRC
         cfl/db/db_mysql.cc
         cfl/db/db_sqlite.cc
         cfl/playerobj.cc
-        cfl/module_base.cc
+        cfl/modules/module_base.cc
         cfl/connection.cc
         cfl/net_engine.cc
         cfl/buffer.cc
+        cfl/modules/role_module.cc
         ${GENERATED_SRC}
 )
 
@@ -173,7 +175,7 @@ set(TEST_TARGETS
         test_abseil test_role test_role2 test_role_sqlite
         test_role_creator test_role_attacher
         test_sqlite3 test_handler test_proto test_connection
-        test_net_engine
+        test_net_engine test_role_module
 )
 
 foreach (target_name IN LISTS TEST_TARGETS)

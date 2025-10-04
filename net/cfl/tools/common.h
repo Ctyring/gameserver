@@ -1,8 +1,10 @@
 #include <string>
 #include <string_view>
+#include <chrono>
+#include <format>
 
 namespace cfl {
-    inline std::string EscapeSQLString(std::string_view input) {
+    inline std::string escape_sql_string(std::string_view input) {
         std::string out;
         out.reserve(input.size() * 2); // 预留空间，避免频繁扩容
         for (char c : input) {
@@ -25,5 +27,10 @@ namespace cfl {
             }
         }
         return out;
+    }
+
+    inline uint64_t get_timestamp() {
+        using namespace std::chrono;
+        return duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
     }
 }

@@ -10,11 +10,11 @@ namespace cfl::shm {
     bool DataPoolManager::init() {
         int area_id = Config::GetGameInfo("area_id", -1);
         if (area_id <= 0) {
-            spdlog::get("sys")->error("初始化失败: areaid <= 0");
+            spdlog::error("初始化失败: areaid <= 0");
             return false;
         }
 
-        shared_page_size_ = Config::GetGameInfo("share_page_size", 0);
+        shared_page_size_ = Config::GetGameInfo("share_page_size", -1);
         if (shared_page_size_ <= 1) {
             shared_page_size_ = 1024;
         }
@@ -25,16 +25,13 @@ namespace cfl::shm {
 
         auto add_pool = [&](SHMTYPE type, auto &&factory) {
             auto idx = static_cast<size_t>(type);
-            data_object_pools_[idx] = std::make_unique<SharedMemoryManagerBase>(factory());
-            if (!data_object_pools_[idx]) {
-                spdlog::get("sys")->error("共享内存池初始化失败, index={}", idx);
-                return false;
-            }
+            data_object_pools_[idx] = factory();
             data_object_pools_[idx]->initialize_block_map();
             return true;
         };
-
-        if (!add_pool(SHMTYPE::RoleData, [&] { return SharedMemoryManager<RoleDataObject>(static_cast<size_t>(SHMTYPE::RoleData), 1024); })) return false;
+        if (!add_pool(SHMTYPE::RoleData, [&] { return std::make_shared<SharedMemoryManager<RoleDataObject>>(static_cast<size_t>(SHMTYPE::RoleData), 1); })) return false;
+//        data_object_pools_[static_cast<size_t>(SHMTYPE::RoleData)] = new SharedMemoryManager<RoleDataObject>(static_cast<size_t>(SHMTYPE::RoleData), 1);
+//        data_object_pools_[static_cast<size_t>(SHMTYPE::RoleData)]->initialize_block_map();
         return true;
     }
 
@@ -65,12 +62,15 @@ namespace cfl::shm {
         return true;
     }
 
-    SharedMemoryManagerBase *DataPoolManager::get_shared_pool(SHMTYPE index) {
+    SharedMemoryManagerBasePtr DataPoolManager::get_shared_pool(SHMTYPE index) {
+        spdlog::error("get_shared_pool");
         auto idx = static_cast<size_t>(index);
         if (idx >= data_object_pools_.size()) {
+            spdlog::info("get_shared_pool 错误: index={} 超出范围", idx);
             return nullptr;
         }
-        return data_object_pools_[idx].get();
+        spdlog::info("get_shared_pool: index={}", idx);
+        return data_object_pools_[idx];
     }
 
 } // namespace cfl::shm

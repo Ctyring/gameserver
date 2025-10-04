@@ -24,8 +24,8 @@ namespace cfl::shm {
         uint64_t roleId{0};                 ///< 角色ID（主键）
         uint64_t accountId{0};              ///< 账号ID
         char name[64];                      ///< 角色名
-        int32_t carrerId{0};                ///< 职业ID
-        int32_t level{0};                   ///< 等级
+        uint32_t carrerId{0};                ///< 职业ID
+        uint32_t level{0};                   ///< 等级
         std::array<int64_t, cfl::ActionNum> action{};   ///< 体力
         std::array<int64_t, cfl::ActionNum> actime{};   ///< 体力恢复时间
         int64_t exp{0};                     ///< 经验值

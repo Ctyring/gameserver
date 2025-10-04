@@ -1,4 +1,5 @@
 #include "shmpage.h"
+#include "spdlog/spdlog.h"
 #include <cstring>
 #include <span>
 #define BLOCK_CHECK_CODE 0x5A
@@ -34,31 +35,51 @@ SharedMemoryManagerBase::SharedMemoryManagerBase(std::size_t module_id, std::siz
     if (firstpage.handle.has_value()) {
         firstpage.raw_data = (char *) GetShareMemory(firstpage.handle);
         if (firstpage.raw_data != nullptr) {
+            spdlog::error("SharedMemoryManagerBase::SharedMemoryManagerBase: module_id = {}", module_id_);
             firstpage.block_headers = (MemoryBlockHeader *) (firstpage.raw_data + raw_block_size_ * page_count_);
-            pages_.push_back(firstpage);
+            pages_.emplace_back(std::move(firstpage));
             import_existing_pages();
             empty_created_ = false;
         } else {
+            spdlog::error("SharedMemoryManagerBase::SharedMemoryManagerBase: firstpage.raw_data == nullptr");
             return;
         }
     } else {
         if (!attach_only) {
             firstpage.handle = CreateShareMemory(module_id_, 0, nSize);
             if (!firstpage.handle.has_value()) {
+                spdlog::error("CreateShareMemory failed: module_id = {}, nSize = {}", module_id_, nSize);
                 return;
             }
 
             firstpage.raw_data = (char *) GetShareMemory(firstpage.handle);
             firstpage.block_headers = (MemoryBlockHeader *) (firstpage.raw_data + raw_block_size_ * blocks_per_page_);
 
+            spdlog::error("=== SharedMemoryManagerBase Allocation Info ===");
+            spdlog::error("module_id          = {}", module_id_);
+            spdlog::error("raw_block_size_    = {}", raw_block_size_);
+            spdlog::error("sizeof(Header)     = {}", sizeof(MemoryBlockHeader));
+            spdlog::error("block_size_        = {}", block_size_);
+            spdlog::error("blocks_per_page_   = {}", blocks_per_page_);
+            spdlog::error("total alloc bytes  = nSize = {}", nSize);
+            spdlog::error("raw_data ptr       = {}", (void*)firstpage.raw_data);
+            spdlog::error("block_headers ptr  = {}", (void*)firstpage.block_headers);
+            spdlog::error("header offset      = {}", (uintptr_t)firstpage.block_headers - (uintptr_t)firstpage.raw_data);
+            spdlog::error("expected offset    = raw_block_size_ * blocks_per_page_ = {}", raw_block_size_ * blocks_per_page_);
+            spdlog::error("================================================");
+            spdlog::error("Try write byte at {}", (void*)firstpage.raw_data);
+            std::fill_n(firstpage.raw_data, blocks_per_page_ * raw_block_size_, 0);
+            spdlog::error("Write success");
+
             /// 清空所有内存
             memset(firstpage.raw_data, 0, nSize);
 
             page_count_++;
             total_blocks_ += blocks_per_page_;
-            init_page(firstpage);
+//            init_page(firstpage);
 
-            pages_.push_back(firstpage);
+            pages_.emplace_back(firstpage);
+            init_page(pages_.back());
         }
         empty_created_ = true;
     }
@@ -72,6 +93,8 @@ SharedMemoryManagerBase::~SharedMemoryManagerBase() {
     for (std::size_t r = 0; r < (std::size_t)pages_.size(); r++) {
         cfl::shm::ReleaseShareMemory(pages_[r].raw_data);
         cfl::shm::CloseShareMemory(pages_[r].handle);
+
+        spdlog::error("SharedMemoryManagerBase::~SharedMemoryManagerBase: module_id = {}", module_id_);
         pages_[r].handle = INVALID_HANDLE_VALUE;
         pages_[r].raw_data = nullptr;
     }
@@ -84,7 +107,8 @@ SharedMemoryManagerBase::~SharedMemoryManagerBase() {
  */
 void SharedMemoryManagerBase::import_existing_pages() {
     while (auto handle = OpenShareMemory(module_id_, page_count_)) {
-        SharedMemoryPage page{ .handle = handle.value() };
+        SharedMemoryPage page;
+        page.handle = std::move(handle);
         page.raw_data = static_cast<char*>(GetShareMemory(page.handle));
         if (!page.raw_data) break;
 
@@ -106,18 +130,21 @@ void SharedMemoryManagerBase::import_existing_pages() {
  * - 注册到 block_map_ 和 free_blocks_ 中
  */
 void SharedMemoryManagerBase::init_page(SharedMemoryPage &page) {
-    std::fill_n(page.raw_data, blocks_per_page_ * raw_block_size_, 0);
+    volatile char test = *page.raw_data; // 触发页访问
+//    std::fill_n(page.raw_data, blocks_per_page_ * raw_block_size_, 0);
 
     auto start_index = blocks_per_page_ * (page_count_ - 1);
     auto headers = std::span<MemoryBlockHeader>(page.block_headers, blocks_per_page_);
-
+    spdlog::error("init_page: start_index = {} headers.size = {}", start_index, headers.size());
     for (std::size_t i = 0; i < headers.size(); ++i) {
-        auto &header = headers[i];
+        auto& header = headers[i];
         new(&header) MemoryBlockHeader();
         header.index = static_cast<std::size_t>(start_index + i);
 
-        block_map_.emplace(header.index, std::ref(header));
-        free_blocks_.emplace(header.index, std::ref(header));
+        block_map_.emplace(header.index, &header);
+        free_blocks_.insert({header.index, &header});
+
+//        spdlog::info("init_page: index = {} check = {}", header.index, free_blocks_.find(header.index)->second->index);
     }
 }
 
@@ -143,10 +170,13 @@ std::optional<SharedObject *> SharedMemoryManagerBase::allocate_object(bool new_
         }
     }
 
+    spdlog::error("allocate_object: free_blocks_.size() = {}", free_blocks_.size());
     auto it = free_blocks_.begin();
     while (it != free_blocks_.end()) {
-        auto &header = it->second.get();
-        SharedObject *pObject = get_object(header.index);
+//        spdlog::error("allocate_object: index = {}", it->first);
+        auto* header = it->second;
+
+        SharedObject *pObject = get_object(header->index);
         if (pObject == nullptr) {
             ++it;
             continue;
@@ -155,8 +185,8 @@ std::optional<SharedObject *> SharedMemoryManagerBase::allocate_object(bool new_
         if (!pObject->is_destroyed()) {
             used_blocks_.insert(std::make_pair(pObject, std::ref(header)));
             free_blocks_.erase(it);
-            header.in_use = true;
-            header.is_new = new_block;
+            header->in_use = true;
+            header->is_new = new_block;
 
             pObject->use();
 
@@ -172,6 +202,16 @@ std::optional<SharedObject *> SharedMemoryManagerBase::allocate_object(bool new_
     }
 
     return nullptr;
+}
+
+MemoryBlockHeader *SharedMemoryManagerBase::get_block_header(std::size_t index){
+    if (index >= total_blocks_) {
+        return nullptr;
+    }
+    auto which_page = index / blocks_per_page_;
+    auto page_index = index % blocks_per_page_;
+    auto& page = pages_[which_page];
+    return &page.block_headers[page_index];
 }
 
 /**
@@ -208,10 +248,10 @@ bool SharedMemoryManagerBase::destroy_object(cfl::shm::SharedObject *obj) {
     if (it == used_blocks_.end()) {
         return false;
     }
-    auto& header = it->second.get();
-    header.in_use = false;
+    auto header = it->second;
+    header->in_use = false;
     used_blocks_.erase(it);
-    free_blocks_.insert(std::make_pair(header.index, std::ref(header)));
+    free_blocks_.insert(std::make_pair(header->index, std::ref(header)));
     return true;
 }
 
@@ -224,11 +264,11 @@ bool SharedMemoryManagerBase::destroy_object(cfl::shm::SharedObject *obj) {
 void SharedMemoryManagerBase::clean_dirty_blocks() {
     std::erase_if(used_blocks_, [&](auto& kv) {
         auto* pObject = static_cast<SharedObject *>(kv.first);
-        auto& header = kv.second.get();
+        auto& header = kv.second;
         if (!pObject->is_in_use()) {
             pObject->reset();
-            header.in_use = false;
-            free_blocks_.insert({header.index, std::ref(header)});
+            header->in_use = false;
+            free_blocks_.insert({header->index, std::ref(header)});
             return true; // 删除
         }
         return false;
@@ -247,7 +287,9 @@ void SharedMemoryManagerBase::clean_dirty_blocks() {
 bool SharedMemoryManagerBase::create_new_page() {
     std::size_t nSize = blocks_per_page_ * (block_size_);
     SharedMemoryPage newPage;
+    spdlog::info("create new page %d", page_count_);
     newPage.handle = CreateShareMemory(module_id_, page_count_, nSize);
+    spdlog::info("new page handle %d", newPage.handle.value());
     if (!newPage.handle.has_value()) {
         return false;
     }
@@ -260,7 +302,32 @@ bool SharedMemoryManagerBase::create_new_page() {
     newPage.block_headers = (MemoryBlockHeader *) (newPage.raw_data + raw_block_size_ * blocks_per_page_);
     page_count_++;
     total_blocks_ += blocks_per_page_;
-    init_page(newPage);
-    pages_.push_back(newPage);
+//    init_page(newPage);
+    pages_.emplace_back(std::move(newPage));
+    init_page(pages_.back());
     return true;
+}
+
+void SharedMemoryManagerBase::initialize_block_map(){
+    if(!empty_created_){
+        for(std::size_t i = 0; i < total_blocks_; i++){
+            auto header = get_block_header(i);
+            auto obj = get_object(i);
+            if(header->in_use && (obj->state() == ObjectState::InUse || obj->state() == ObjectState::Locked)){
+                used_blocks_.insert(std::make_pair(obj, header));
+            }
+            else{
+                free_blocks_.insert(std::make_pair(i, header));
+            }
+            block_map_.insert(std::make_pair(i, header));
+        }
+    }
+    else{
+        if(pages_.empty()){
+            page_count_ = 0;
+            return;
+        }
+
+        init_page(pages_[0]);
+    }
 }

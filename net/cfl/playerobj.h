@@ -1,18 +1,16 @@
 #pragma once
+/**
+ * @file player_object.h
+ * @brief 定义 PlayerObject 类，管理玩家的基本信息、状态、场景交互和模块。
+ */
 
 #include "handler_manager.h"
 #include "cfl.h"
 #include "cfl/protos/gen_proto/login.pb.h"
 #include "cfl/protos/gen_proto/game.pb.h"
-#include "module_base.h"
-
+#include "cfl/protos/gen_proto/login_db.pb.h"
+#include "cfl/modules/module_base.h"
 namespace cfl {
-
-    /**
-     * @file player_object.h
-     * @brief 定义 PlayerObject 类，管理玩家的基本信息、状态、场景交互和模块。
-     */
-
     /**
      * @class PlayerObject
      * @brief 玩家对象类，负责维护玩家的基本属性、登录状态、场景操作和模块管理。
@@ -85,7 +83,7 @@ namespace cfl {
          * @param ack 数据库返回的登录应答消息。
          * @return 是否成功。
          */
-        bool read_from_db_login_data(RoleLoginAck &ack);
+        bool read_from_db_login_data(DBRoleLoginAck &ack);
 
         /**
          * @brief 发送 Protobuf 消息给客户端。

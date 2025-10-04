@@ -2,11 +2,12 @@
 
 #include <cstdint>
 #include <set>
-#include "cfl.h"
+#include "cfl/cfl.h"
 #include "cfl/protos/gen_proto/login.pb.h"
+#include "cfl/protos/gen_proto/login_db.pb.h"
 
 namespace cfl {
-    class CPlayerObject;
+    class PlayerObject;
 
     /**
      * @class ModuleBase
@@ -23,11 +24,12 @@ namespace cfl {
      */
     class ModuleBase {
     public:
+        using PlayerObjPtr = std::shared_ptr<PlayerObject>;
         /**
          * @brief 构造函数
          * @param owner 指向所属的玩家对象
          */
-        explicit ModuleBase(CPlayerObject *owner);
+        explicit ModuleBase(PlayerObjPtr owner);
 
         /**
          * @brief 析构函数
@@ -76,7 +78,7 @@ namespace cfl {
          * @param ack 登录数据结构（protobuf）
          * @return true 表示成功，false 表示失败
          */
-        virtual bool read_from_db_login_data(RoleLoginAck &ack) = 0;
+        virtual bool read_from_db_login_data(const DBRoleLoginAck &ack) = 0;
 
         /**
          * @brief 保存模块数据到客户端登录数据
@@ -124,16 +126,16 @@ namespace cfl {
          * @param owner 玩家对象指针
          * @return true 表示成功
          */
-        bool set_owner(CPlayerObject *owner);
+        bool set_owner(PlayerObjPtr owner);
 
         /**
          * @brief 获取所属的玩家对象
          * @return 玩家对象指针
          */
-        CPlayerObject *get_owner();
+        PlayerObjPtr get_owner();
 
     protected:
-        CPlayerObject *owner_player{nullptr};   ///< 所属玩家对象指针
+        PlayerObjPtr owner_player{nullptr};   ///< 所属玩家对象指针
         std::set<std::uint64_t> change_set;     ///< 需要同步/保存的数据ID集合
         std::set<std::uint64_t> remove_set;     ///< 需要删除的数据ID集合
     };

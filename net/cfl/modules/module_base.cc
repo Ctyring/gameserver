@@ -5,7 +5,7 @@
 #include <memory>
 #include "module_base.h"
 namespace cfl {
-    ModuleBase::ModuleBase(CPlayerObject* pOwner)
+    ModuleBase::ModuleBase(PlayerObjPtr pOwner)
     {
         owner_player = pOwner;
     }
@@ -37,13 +37,13 @@ namespace cfl {
         return TRUE;
     }
 
-    bool ModuleBase::set_owner(CPlayerObject *owner)
+    bool ModuleBase::set_owner(PlayerObjPtr owner)
     {
         owner_player = owner;
         return TRUE;
     }
 
-    CPlayerObject* ModuleBase::get_owner()
+    ModuleBase::PlayerObjPtr ModuleBase::get_owner()
     {
         return owner_player;
     }

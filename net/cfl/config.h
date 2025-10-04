@@ -9,12 +9,14 @@
 #include <spdlog/sinks/stdout_color_sinks.h>
 #include <spdlog/sinks/stdout_sinks.h>
 #include <spdlog/sinks/basic_file_sink.h>
+#include "cfl.h"
 
 namespace cfl {
 
     class Config {
     public:
         static void Init();
+//        static void TestGet();
         static spdlog::level::level_enum LevelFromString(const std::string &level_str);
         static spdlog::async_overflow_policy AsyncOverflowPolicyFromString(const std::string &policy_str);
         static void InitLogging(const std::string &yaml_path);
@@ -35,15 +37,15 @@ namespace cfl {
             if (!game_info_) return default_val;
 
             YAML::Node node = game_info_;
+            YAML::Node find;
             for (auto &key : SplitPath(path)) {
                 if (!node[key]) {
                     return default_val;
                 }
-                node = node[key];
+                find = node[key];
             }
-
             try {
-                return node.as<T>();
+                return find.as<T>();
             } catch (...) {
                 return default_val;
             }

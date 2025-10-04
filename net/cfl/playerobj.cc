@@ -83,7 +83,7 @@ namespace cfl {
         return true;
     }
 
-    bool PlayerObject::read_from_db_login_data(RoleLoginAck &ack) {
+    bool PlayerObject::read_from_db_login_data(DBRoleLoginAck &ack) {
         for (auto type = static_cast<int>(ModuleType::Role);
              type < static_cast<int>(ModuleType::End); type++) {
             auto *module = modules_.at(type);
