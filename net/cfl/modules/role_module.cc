@@ -68,7 +68,6 @@ namespace cfl{
 
     bool RoleModule::init_base_data(std::uint64_t role_id, std::string_view name, std::uint32_t career_id,
                                     std::uint64_t account_id, std::int32_t channel) {
-        spdlog::info("初始化角色数据");
         role_data_object_ = shm::create_object<shm::RoleDataObject>(shm::SHMTYPE::RoleData, true);
         role_data_object_->lock();
         role_data_object_->roleId = role_id;
@@ -79,7 +78,6 @@ namespace cfl{
         strcpy_s(role_data_object_->name, name.data());
         role_data_object_->langId = 0;
         role_data_object_->unlock();
-        spdlog::info("角色数据初始化完成");
         // todo: 从静态数据里面获取相关信息
         return true;
     }

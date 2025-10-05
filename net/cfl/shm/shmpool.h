@@ -90,9 +90,7 @@ namespace cfl::shm {
             spdlog::error("CreateObject 错误: SharedMemoryBase 为空");
             return nullptr;
         }
-        spdlog::error("CreateObject: {}", typeid(T).name());
         auto x = static_cast<T*>(ssm->allocate_object(allocate_new).value());
-        spdlog::error("CreateObject ok: {}", typeid(T).name());
         std::shared_ptr<T> object(x,
                 [](T* p) {
                     if (p) {

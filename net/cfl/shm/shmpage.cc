@@ -55,22 +55,6 @@ SharedMemoryManagerBase::SharedMemoryManagerBase(std::size_t module_id, std::siz
             firstpage.raw_data = (char *) GetShareMemory(firstpage.handle);
             firstpage.block_headers = (MemoryBlockHeader *) (firstpage.raw_data + raw_block_size_ * blocks_per_page_);
 
-            spdlog::error("=== SharedMemoryManagerBase Allocation Info ===");
-            spdlog::error("module_id          = {}", module_id_);
-            spdlog::error("raw_block_size_    = {}", raw_block_size_);
-            spdlog::error("sizeof(Header)     = {}", sizeof(MemoryBlockHeader));
-            spdlog::error("block_size_        = {}", block_size_);
-            spdlog::error("blocks_per_page_   = {}", blocks_per_page_);
-            spdlog::error("total alloc bytes  = nSize = {}", nSize);
-            spdlog::error("raw_data ptr       = {}", (void*)firstpage.raw_data);
-            spdlog::error("block_headers ptr  = {}", (void*)firstpage.block_headers);
-            spdlog::error("header offset      = {}", (uintptr_t)firstpage.block_headers - (uintptr_t)firstpage.raw_data);
-            spdlog::error("expected offset    = raw_block_size_ * blocks_per_page_ = {}", raw_block_size_ * blocks_per_page_);
-            spdlog::error("================================================");
-            spdlog::error("Try write byte at {}", (void*)firstpage.raw_data);
-            std::fill_n(firstpage.raw_data, blocks_per_page_ * raw_block_size_, 0);
-            spdlog::error("Write success");
-
             /// 清空所有内存
             memset(firstpage.raw_data, 0, nSize);
 
@@ -135,7 +119,6 @@ void SharedMemoryManagerBase::init_page(SharedMemoryPage &page) {
 
     auto start_index = blocks_per_page_ * (page_count_ - 1);
     auto headers = std::span<MemoryBlockHeader>(page.block_headers, blocks_per_page_);
-    spdlog::error("init_page: start_index = {} headers.size = {}", start_index, headers.size());
     for (std::size_t i = 0; i < headers.size(); ++i) {
         auto& header = headers[i];
         new(&header) MemoryBlockHeader();
@@ -143,8 +126,6 @@ void SharedMemoryManagerBase::init_page(SharedMemoryPage &page) {
 
         block_map_.emplace(header.index, &header);
         free_blocks_.insert({header.index, &header});
-
-//        spdlog::info("init_page: index = {} check = {}", header.index, free_blocks_.find(header.index)->second->index);
     }
 }
 
@@ -170,12 +151,9 @@ std::optional<SharedObject *> SharedMemoryManagerBase::allocate_object(bool new_
         }
     }
 
-    spdlog::error("allocate_object: free_blocks_.size() = {}", free_blocks_.size());
     auto it = free_blocks_.begin();
     while (it != free_blocks_.end()) {
-//        spdlog::error("allocate_object: index = {}", it->first);
         auto* header = it->second;
-
         SharedObject *pObject = get_object(header->index);
         if (pObject == nullptr) {
             ++it;
@@ -189,7 +167,6 @@ std::optional<SharedObject *> SharedMemoryManagerBase::allocate_object(bool new_
             header->is_new = new_block;
 
             pObject->use();
-
             return pObject;
         }
         it++;

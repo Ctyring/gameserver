@@ -63,13 +63,11 @@ namespace cfl::shm {
     }
 
     SharedMemoryManagerBasePtr DataPoolManager::get_shared_pool(SHMTYPE index) {
-        spdlog::error("get_shared_pool");
         auto idx = static_cast<size_t>(index);
         if (idx >= data_object_pools_.size()) {
             spdlog::info("get_shared_pool 错误: index={} 超出范围", idx);
             return nullptr;
         }
-        spdlog::info("get_shared_pool: index={}", idx);
         return data_object_pools_[idx];
     }
 
