@@ -1,5 +1,7 @@
 #include "role_module.h"
 #include "cfl/shm/shmpool.h"
+#include "cfl/static_data.h"
+
 namespace cfl{
     RoleModule::RoleModule(PlayerObjPtr owner)
         : ModuleBase(std::move(owner))
@@ -8,7 +10,10 @@ namespace cfl{
     }
 
     bool RoleModule::on_create(std::uint64_t role_id) {
-        // todo: 获取玩家数据
+        auto carrer_info = StaticData::instance().get_carrer_info(role_data_object_->carrerId);
+        if(!carrer_info){
+            spdlog::error("[RoleModule::on_create] no carrer_info");
+        }
         if(role_data_object_ == nullptr){
             return false;
         }
@@ -16,11 +21,16 @@ namespace cfl{
         role_data_object_->lock();
         role_data_object_->level = 1;
         for(int i = 0; i < ActionNum; i++){
-            // todo: 初始化每个技能
+            role_data_object_->action[i] = StaticData::instance().get_action_max_value(i + 1);
+            role_data_object_->actime[i] = 0;
         }
-        // todo: 初始化玩家数据
+        role_data_object_->cityCopyId = carrer_info->born_city;
+        role_data_object_->createTime = get_timestamp();
+        role_data_object_->logonTime = role_data_object_->createTime;
+        role_data_object_->logoffTime = role_data_object_->logonTime + 1;
 
         role_data_object_->unlock();
+        actor_id_ = carrer_info->actor_id;
         return true;
     }
 
@@ -45,6 +55,7 @@ namespace cfl{
 
         role_data_object_->logonTime = cfl::get_timestamp();
         role_data_object_->unlock();
+        // todo: 重新设置登录时间
         return true;
     }
 
@@ -78,7 +89,12 @@ namespace cfl{
         strcpy_s(role_data_object_->name, name.data());
         role_data_object_->langId = 0;
         role_data_object_->unlock();
-        // todo: 从静态数据里面获取相关信息
+        auto pInfo = StaticData::instance().get_carrer_info(career_id);
+        if(!pInfo){
+            spdlog::error("[RoleModule::init_base_data] no career info");
+            return false;
+        }
+        actor_id_ = pInfo->actor_id;
         return true;
     }
 
@@ -102,7 +118,12 @@ namespace cfl{
         role_data_object_->channel = ack.role_data().channel();
         role_data_object_->onlineTime = ack.role_data().online_time();
         if(role_data_object_->cityCopyId == 0){
-            // todo: 初始化出生城市
+            auto info = StaticData::instance().get_carrer_info(role_data_object_->carrerId);
+            if(info){
+                role_data_object_->cityCopyId = static_cast<int32_t>(info->born_city);
+            }
+            else{}
+            spdlog::error("no city id");
         }
 
         for(int i = 0; i < ActionNum; i++){
@@ -111,8 +132,12 @@ namespace cfl{
         }
 
         role_data_object_->unlock();
-
-        // todo: 从静态数据里面读取信息
+        auto pInfo = StaticData::instance().get_carrer_info(role_data_object_->carrerId);
+        if(!pInfo){
+            spdlog::error("[RoleModule::read_from_db_login_data] no career info");
+            return false;
+        }
+        actor_id_ = pInfo->actor_id;
         return true;
     }
 
@@ -178,7 +203,16 @@ namespace cfl{
 
         role_data_object_->lock();
         role_data_object_->action[action_id - 1] -= action_num;
-        // todo: 小于最大行动力的时候要计算CD
+        role_data_object_->action[action_id - 1] -= action_num;
+        auto max_value = StaticData::instance().get_action_max_value(action_id);
+        if(role_data_object_->action[action_id - 1] > max_value){
+            if(role_data_object_->actime[action_id - 1] <= 0){
+                role_data_object_->actime[action_id - 1] = get_timestamp();
+            }
+        }
+        else{
+            role_data_object_->actime[action_id - 1] = 0;
+        }
         role_data_object_->unlock();
         return true;
     }
@@ -249,12 +283,11 @@ namespace cfl{
             }
         }
 
-        // todo: 超过最大值则设置为最大并把计时置 0（与原实现一致）
-//        std::uint64_t maxv = CStaticData::GetInstancePtr()->GetActoinMaxValue(action_id);
-//        if (role_data_object_->action[action_id - 1] >= maxv) {
-//            role_data_object_->action[action_id - 1] = maxv;
-//            role_data_object_->actime[action_id - 1] = 0;
-//        }
+        std::int64_t maxv = StaticData::instance().get_action_max_value(action_id);
+        if (role_data_object_->action[action_id - 1] >= maxv) {
+            role_data_object_->action[action_id - 1] = maxv;
+            role_data_object_->actime[action_id - 1] = 0;
+        }
 
         std::uint64_t ret = role_data_object_->action[action_id - 1];
         role_data_object_->unlock();
@@ -271,15 +304,14 @@ namespace cfl{
             return false;
         }
 
-        // todo: 如果已经满，则确保 start time 为 0 并直接返回 false（无变化）
-//        std::uint64_t maxv = CStaticData::GetInstancePtr()->GetActoinMaxValue(action_id);
-//        if (role_data_object_->action[action_id - 1] >= maxv) {
-//            if (role_data_object_->actime[action_id - 1] != 0) {
-//                spdlog::warn("update_action: action is max but actime is not 0 (action_id={})", action_id);
-//            }
-//            role_data_object_->actime[action_id - 1] = 0;
-//            return false;
-//        }
+        std::int64_t maxv = StaticData::instance().get_action_max_value(action_id);
+        if (role_data_object_->action[action_id - 1] >= maxv) {
+            if (role_data_object_->actime[action_id - 1] != 0) {
+                spdlog::warn("update_action: action is max but actime is not 0 (action_id={})", action_id);
+            }
+            role_data_object_->actime[action_id - 1] = 0;
+            return false;
+        }
 
         // 如果 start time 为 0，说明计时未开始，直接返回
         if (role_data_object_->actime[action_id - 1] == 0) {
@@ -290,27 +322,26 @@ namespace cfl{
         std::uint64_t now = cfl::get_timestamp();
         std::uint64_t elapsed = now - role_data_object_->actime[action_id - 1];
 
-        // todo: 获取单位时间
-//        std::uint64_t unit = CStaticData::GetInstancePtr()->GetActoinUnitTime(action_id);
-//        if (unit == 0) {
-//            spdlog::error("update_action error, unit time is 0 for action_id: {}", action_id);
-//            return false;
-//        }
+        std::uint64_t unit = StaticData::instance().get_action_unit_time(action_id);
+        if (unit == 0) {
+            spdlog::error("update_action error, unit time is 0 for action_id: {}", action_id);
+            return false;
+        }
 
-//        if (elapsed < unit) {
-//            return false; // 还没到恢复一个单位
-//        }
+        if (elapsed < unit) {
+            return false; // 还没到恢复一个单位
+        }
 
-//        std::uint32_t addNum = static_cast<std::uint32_t>(elapsed / unit);
-//        role_data_object_->action[action_id - 1] += addNum;
+        std::uint32_t addNum = static_cast<std::uint32_t>(elapsed / unit);
+        role_data_object_->action[action_id - 1] += addNum;
 
-//        if (role_data_object_->action[action_id - 1] >= maxv) {
-//            role_data_object_->action[action_id - 1] = maxv;
-//            role_data_object_->actime[action_id - 1] = 0;
-//        } else {
+        if (role_data_object_->action[action_id - 1] >= maxv) {
+            role_data_object_->action[action_id - 1] = maxv;
+            role_data_object_->actime[action_id - 1] = 0;
+        } else {
 //             更新起始时间到上次补满的后续时间点（避免重复计入）
-//            role_data_object_->actime[action_id - 1] = role_data_object_->actime[action_id - 1] + static_cast<std::uint64_t>(addNum) * unit;
-//        }
+            role_data_object_->actime[action_id - 1] = role_data_object_->actime[action_id - 1] + static_cast<std::uint64_t>(addNum) * unit;
+        }
 
         return true;
     }
@@ -339,23 +370,22 @@ namespace cfl{
         role_data_object_->exp += static_cast<std::uint64_t>(exp);
         role_data_object_->unlock();
 
-        // todo: 升级循环（可能多级）
-//        while (role_data_object_->level < MAX_ROLE_LEVEL) {
-//            StLevelInfo* pLevelInfo = CStaticData::GetInstancePtr()->GetCarrerLevelInfo(role_data_object_->carrerId, role_data_object_->level + 1);
-//            if (pLevelInfo == nullptr) {
-//                spdlog::error("add_exp: missing level info for career {} level {}", role_data_object_->carrerId, role_data_object_->level + 1);
-//                break;
-//            }
+        while (role_data_object_->level < MaxRoleLevel) {
+            auto pLevelInfo = StaticData::instance().get_carrer_level_info(role_data_object_->carrerId, role_data_object_->level + 1);
+            if (pLevelInfo == nullptr) {
+                spdlog::error("add_exp: missing level info for career {} level {}", role_data_object_->carrerId, role_data_object_->level + 1);
+                break;
+            }
 
-//            if (role_data_object_->exp >= pLevelInfo->dwNeedExp) {
-//                role_data_object_->lock();
-//                role_data_object_->exp -= pLevelInfo->dwNeedExp;
-//                role_data_object_->level += 1;
-//                role_data_object_->unlock();
-//            } else {
-//                break;
-//            }
-//        }
+            if (role_data_object_->exp >= pLevelInfo->need_exp) {
+                role_data_object_->lock();
+                role_data_object_->exp -= pLevelInfo->need_exp;
+                role_data_object_->level += 1;
+                role_data_object_->unlock();
+            } else {
+                break;
+            }
+        }
 
         return role_data_object_->exp;
     }
