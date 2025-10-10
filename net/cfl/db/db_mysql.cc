@@ -374,7 +374,9 @@ namespace cfl::db {
 
         SqlData::Ptr MySQL::query(std::string_view sql) {
             try {
+                spdlog::error("[MySQL] query begin: {}  数据库: {}", sql, m_dbname);
                 auto res = m_session->sql(std::string(sql)).execute();
+                spdlog::error("[MySQL] query end: {}", res.count());
                 return std::make_shared<MySQLResult>(std::move(res)); // 需要 MySQLRes 封装 SqlData
             } catch (const mysqlx::Error &err) {
                 m_has_error = true;
@@ -715,10 +717,10 @@ namespace cfl::db {
             return last_errmsg_;
         }
 
-        MySQLManager::MySQLManager()
-        {
-            spdlog::info("[MySQLManager] ctor: {}", static_cast<const void *>(this));
-        }
+//        MySQLManager::MySQLManager()
+//        {
+//            spdlog::info("[MySQLManager] ctor: {}", static_cast<const void *>(this));
+//        }
 
         MySQLManager::~MySQLManager()
         {
@@ -750,6 +752,7 @@ namespace cfl::db {
                 conns_.emplace(name, std::list<Database::Ptr>{});
             }
 
+            db_defines_[name]["dbname"] = name;
             spdlog::info("[MySQLManager] register mysql: {} {}", name, db_defines_.size());
         }
 
@@ -940,7 +943,6 @@ namespace cfl::db {
 
         MySQLUtil::DataPtr MySQLUtil::query(std::string_view name, std::string_view sql) {
             auto db = MySQLMgr::instance()->get(std::string{name});
-//        auto db = MySQLManager::instance().get(std::string{name});
             if (!db) {
                 throw std::runtime_error(std::format("MySQLUtil::query - no datasource [{}]", name));
             }

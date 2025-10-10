@@ -347,7 +347,13 @@ namespace cfl::db {
         using Ptr = std::shared_ptr<MySQLManager>;
         using MutexType = std::mutex;
 
-        MySQLManager();
+        MySQLManager(){
+            register_mysql("db_game");
+            register_mysql("db_log");
+            register_mysql("db_gm");
+            register_mysql("db_account");
+            register_mysql("test");
+        }
 
         ~MySQLManager();
 //        CFL_API static MySQLManager& instance() {

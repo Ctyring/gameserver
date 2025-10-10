@@ -16,15 +16,21 @@ int main() {
         cfl::Config::Init();
 
         // 注册数据库
-        MySQLMgr::instance()->register_mysql("test");
+//        MySQLMgr::instance()->register_mysql("test");
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
         // 测试1: 基本查询
         spdlog::info("=== 测试1: 基本查询 ===");
-        auto result = MySQLUtil::query("test", "SELECT CAST(NOW() AS CHAR) AS cur_time");
+        auto result = MySQLUtil::query("db_game", "SELECT * FROM player");
+//        while (result->next()) {
+//            spdlog::info("当前时间: {}", query->get_string(0));
+//        }
         if (result && result->next()) {
-            spdlog::info("当前时间: {}", result->get_string(0));
+            spdlog::info("数据: {}", result->get_int32(0));
         } else {
+            if(!result){
+                spdlog::error("没查到表");
+            }
             spdlog::error("查询失败");
         }
 

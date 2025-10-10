@@ -13,6 +13,7 @@
 #include "cfl.h"
 #include <memory>
 #include <span>
+#include <algorithm>
 
 namespace cfl {
 
@@ -218,14 +219,20 @@ namespace cfl {
         [[nodiscard]] std::int32_t buffer_size() const override { return static_cast<std::int32_t>(buffer_.size()); }
 
         std::int32_t copy_from(DataBuffer &src) override {
-            std::int32_t len = std::min(buffer_size(), src.total_length());
+//            std::int32_t len = std::min(buffer_size(), src.total_length());
+            std::int32_t buffer_len = buffer_size();
+            std::int32_t total_len = src.total_length();
+            std::int32_t len = buffer_len < total_len ? buffer_len : total_len;
             std::copy(src.data().begin(), src.data().begin() + len, buffer_.begin());
             total_length_ = len;
             return len;
         }
 
         std::int32_t copy_to(char *dest, std::int32_t dest_len) override {
-            std::int32_t len = std::min(dest_len, total_length_);
+//            std::int32_t len = std::min(static_cast<std::int32_t>(dest_len), total_length_);
+            std::int32_t buffer_len = dest_len;
+            std::int32_t total_len = total_length_;
+            std::int32_t len = buffer_len < total_len ? buffer_len : total_len;
             std::copy(buffer_.begin(), buffer_.begin() + len, dest);
             return len;
         }
