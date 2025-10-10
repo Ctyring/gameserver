@@ -7,7 +7,7 @@ using namespace cfl::db;
 
 int main() {
     // 注册数据库
-    SQLiteMgr::instance()->register_sqlite("test_db", {{"dbname", "test.db"}});
+    SQLiteMgr::instance()->register_sqlite("test_db", {{"dbname", "data/test.db"}});
 
     // 获取数据库连接
     auto db = SQLiteMgr::instance()->get("test_db");

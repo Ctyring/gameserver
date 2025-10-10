@@ -74,13 +74,11 @@ SharedMemoryManagerBase::SharedMemoryManagerBase(std::size_t module_id, std::siz
  * @details 释放所有已映射的共享内存，并关闭句柄
  */
 SharedMemoryManagerBase::~SharedMemoryManagerBase() {
-    for (std::size_t r = 0; r < (std::size_t)pages_.size(); r++) {
-        cfl::shm::ReleaseShareMemory(pages_[r].raw_data);
-        cfl::shm::CloseShareMemory(pages_[r].handle);
-
-        spdlog::error("SharedMemoryManagerBase::~SharedMemoryManagerBase: module_id = {}", module_id_);
-        pages_[r].handle = INVALID_HANDLE_VALUE;
-        pages_[r].raw_data = nullptr;
+    for(auto & page : pages_) {
+        cfl::shm::ReleaseShareMemory(page.raw_data);
+        cfl::shm::CloseShareMemory(page.handle);
+        page.handle = INVALID_HANDLE_VALUE;
+        page.raw_data = nullptr;
     }
     pages_.clear();
 }

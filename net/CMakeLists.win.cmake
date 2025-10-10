@@ -51,6 +51,8 @@ FetchContent_MakeAvailable(abseil)
 # ---------- sqlite3 ----------
 find_package(SQLite3 REQUIRED)
 
+# ---------- pugixml ----------
+find_package(pugixml CONFIG REQUIRED)
 # ---------- odb ----------
 #find_package(odb CONFIG REQUIRED)
 #find_package(libodb-sqlite CONFIG REQUIRED)
@@ -90,6 +92,7 @@ set(PROTO_FILES
         ${CMAKE_SOURCE_DIR}/cfl/protos/login_db.proto
         ${CMAKE_SOURCE_DIR}/cfl/protos/login.proto
         ${CMAKE_SOURCE_DIR}/cfl/protos/game.proto
+        ${CMAKE_SOURCE_DIR}/cfl/protos/define.proto
 )
 set(PROTO_OUT_PUT_PATH ${CMAKE_SOURCE_DIR}/cfl/protos/gen_proto)
 # 自动调用 protoc 生成
@@ -135,6 +138,7 @@ set(LIB_SRC
         cfl/net_engine.cc
         cfl/buffer.cc
         cfl/modules/role_module.cc
+        cfl/static_data.cc
         ${GENERATED_SRC}
 )
 
@@ -156,6 +160,8 @@ target_link_libraries(cfl
         protobuf::libprotobuf
         #        protos
         #        magic_enum::magic_enum
+        pugixml::shared
+        pugixml::pugixml
 )
 
 target_include_directories(cfl PUBLIC
@@ -175,7 +181,7 @@ set(TEST_TARGETS
         test_abseil test_role test_role2 test_role_sqlite
         test_role_creator test_role_attacher
         test_sqlite3 test_handler test_proto test_connection
-        test_net_engine test_role_module
+        test_net_engine test_role_module test_static_data
 )
 
 foreach (target_name IN LISTS TEST_TARGETS)
@@ -184,6 +190,7 @@ foreach (target_name IN LISTS TEST_TARGETS)
 #            ${GENERATED_SRC}
     )
     target_link_libraries(${target_name} PRIVATE cfl)
+    add_dependencies(${target_name} cfl)
 endforeach ()
 
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)

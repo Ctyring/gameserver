@@ -9,14 +9,12 @@
 #include <spdlog/sinks/stdout_color_sinks.h>
 #include <spdlog/sinks/stdout_sinks.h>
 #include <spdlog/sinks/basic_file_sink.h>
-#include "cfl.h"
 
 namespace cfl {
 
     class Config {
     public:
         static void Init();
-//        static void TestGet();
         static spdlog::level::level_enum LevelFromString(const std::string &level_str);
         static spdlog::async_overflow_policy AsyncOverflowPolicyFromString(const std::string &policy_str);
         static void InitLogging(const std::string &yaml_path);
@@ -49,6 +47,14 @@ namespace cfl {
             } catch (...) {
                 return default_val;
             }
+        }
+
+        static std::string GetDbParam(const std::string &key) {
+            auto it = db_params_.find(key);
+            if (it != db_params_.end()) {
+                return it->second;
+            }
+            return "";
         }
 
         static std::unordered_map<std::string, std::string> db_params_;

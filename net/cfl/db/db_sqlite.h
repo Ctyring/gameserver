@@ -152,6 +152,36 @@ namespace cfl::db {
         /// 获取时间
         [[nodiscard]] std::time_t get_time(int idx) const override;
 
+        int column_index(std::string_view name) const override;
+
+        [[nodiscard]] bool is_null(std::string_view col_name) const override;
+
+        [[nodiscard]] int8_t get_int8(std::string_view col_name) const override;
+
+        [[nodiscard]] uint8_t get_uint8(std::string_view col_name) const override;
+
+        [[nodiscard]] int16_t get_int16(std::string_view col_name) const override;
+
+        [[nodiscard]] uint16_t get_uint16(std::string_view col_name) const override;
+
+        [[nodiscard]] int32_t get_int32(std::string_view col_name) const override;
+
+        [[nodiscard]] uint32_t get_uint32(std::string_view col_name) const override;
+
+        [[nodiscard]] int64_t get_int64(std::string_view col_name) const override;
+
+        [[nodiscard]] uint64_t get_uint64(std::string_view col_name) const override;
+
+        [[nodiscard]] float get_float(std::string_view col_name) const override;
+
+        [[nodiscard]] double get_double(std::string_view col_name) const override;
+
+        [[nodiscard]] std::string get_string(std::string_view col_name) const override;
+
+        [[nodiscard]] std::string get_blob(std::string_view col_name) const override;
+
+        [[nodiscard]] std::time_t get_time(std::string_view col_name) const override;
+
         /// 移动到下一行
         bool next() override;
 
@@ -169,6 +199,7 @@ namespace cfl::db {
         std::vector<std::string> m_column_names;            ///< 列名数组
         std::vector<std::vector<std::string>> m_data;       ///< 查询结果数据
         int m_current_row{-1};                              ///< 当前行索引
+        std::unordered_map<std::string, int> m_col_index;
     };
 
     /**

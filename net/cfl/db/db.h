@@ -89,6 +89,36 @@ namespace cfl::db {
         /// 获取指定列的时间戳
         [[nodiscard]] virtual std::time_t get_time(int idx) const = 0;
 
+        virtual int column_index(std::string_view name) const = 0;
+
+        /// 判断指定列是否为 NULL
+        [[nodiscard]] virtual bool is_null(std::string_view col_name) const = 0;
+        /// 获取指定列的 int8 值
+        [[nodiscard]] virtual int8_t get_int8(std::string_view col_name) const = 0;
+        /// 获取指定列的 uint8 值
+        [[nodiscard]] virtual uint8_t get_uint8(std::string_view col_name) const = 0;
+        /// 获取指定列的 int16 值
+        [[nodiscard]] virtual int16_t get_int16(std::string_view col_name) const = 0;
+        /// 获取指定列的 uint16 值
+        [[nodiscard]] virtual uint16_t get_uint16(std::string_view col_name) const = 0;
+        /// 获取指定列的 int32 值
+        [[nodiscard]] virtual int32_t get_int32(std::string_view col_name) const = 0;
+        /// 获取指定列的 uint32 值
+        [[nodiscard]] virtual uint32_t get_uint32(std::string_view col_name) const = 0;
+        /// 获取指定列的 int64 值
+        [[nodiscard]] virtual int64_t get_int64(std::string_view col_name) const = 0;
+        /// 获取指定列的 uint64 值
+        [[nodiscard]] virtual uint64_t get_uint64(std::string_view col_name) const = 0;
+        /// 获取指定列的 float 值
+        [[nodiscard]] virtual float get_float(std::string_view col_name) const = 0;
+        /// 获取指定列的 double 值
+        [[nodiscard]] virtual double get_double(std::string_view col_name) const = 0;
+        /// 获取指定列的字符串
+        [[nodiscard]] virtual std::string get_string(std::string_view col_name) const = 0;
+        /// 获取指定列的二进制数据（BLOB）
+        [[nodiscard]] virtual std::string get_blob(std::string_view col_name) const = 0;
+        /// 获取指定列的时间戳
+        [[nodiscard]] virtual std::time_t get_time(std::string_view col_name) const = 0;
         /**
          * @brief 移动到下一行数据
          * @return 是否还有数据行

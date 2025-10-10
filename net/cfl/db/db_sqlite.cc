@@ -83,7 +83,10 @@ namespace cfl::db {
         return static_cast<uint16_t>(std::stoul(m_data[m_current_row][idx]));
     }
 
-    int32_t SQLiteResult::get_int32(int idx) const { return std::stoi(m_data[m_current_row][idx]); }
+    int32_t SQLiteResult::get_int32(int idx) const {
+        if (m_data[m_current_row][idx].empty()) return 0;
+        return std::stoi(m_data[m_current_row][idx]);
+    }
 
     uint32_t SQLiteResult::get_uint32(int idx) const {
         return static_cast<uint32_t>(std::stoul(m_data[m_current_row][idx]));
@@ -105,6 +108,70 @@ namespace cfl::db {
 
     std::time_t SQLiteResult::get_time(int idx) const { return std::stoll(m_data[m_current_row][idx]); }
 
+    int SQLiteResult::column_index(std::string_view name) const {
+        auto it = m_col_index.find(std::string(name));
+        if (it == m_col_index.end()) {
+            throw std::runtime_error("Unknown column name: " + std::string(name));
+        }
+        return it->second;
+    }
+
+    [[nodiscard]] bool SQLiteResult::is_null(std::string_view col_name) const{
+        return is_null(column_index(col_name));
+    }
+
+    [[nodiscard]] int8_t SQLiteResult::get_int8(std::string_view col_name) const{
+        return get_int8(column_index(col_name));
+    }
+
+    [[nodiscard]] uint8_t SQLiteResult::get_uint8(std::string_view col_name) const{
+        return get_uint8(column_index(col_name));
+    }
+
+    [[nodiscard]] int16_t SQLiteResult::get_int16(std::string_view col_name) const{
+        return get_int16(column_index(col_name));
+    }
+
+    [[nodiscard]] uint16_t SQLiteResult::get_uint16(std::string_view col_name) const{
+        return get_uint16(column_index(col_name));
+    }
+
+    [[nodiscard]] int32_t SQLiteResult::get_int32(std::string_view col_name) const{
+        return get_int32(column_index(col_name));
+    }
+
+    [[nodiscard]] uint32_t SQLiteResult::get_uint32(std::string_view col_name) const{
+        return get_uint32(column_index(col_name));
+    }
+
+    [[nodiscard]] int64_t SQLiteResult::get_int64(std::string_view col_name) const{
+        return get_int64(column_index(col_name));
+    }
+
+    [[nodiscard]] uint64_t SQLiteResult::get_uint64(std::string_view col_name) const{
+        return get_uint64(column_index(col_name));
+    }
+
+    [[nodiscard]] float SQLiteResult::get_float(std::string_view col_name) const{
+        return get_float(column_index(col_name));
+    }
+
+    [[nodiscard]] double SQLiteResult::get_double(std::string_view col_name) const{
+        return get_double(column_index(col_name));
+    }
+
+    [[nodiscard]] std::string SQLiteResult::get_string(std::string_view col_name) const{
+        return get_string(column_index(col_name));
+    }
+
+    [[nodiscard]] std::string SQLiteResult::get_blob(std::string_view col_name) const{
+        return get_blob(column_index(col_name));
+    }
+
+    [[nodiscard]] std::time_t SQLiteResult::get_time(std::string_view col_name) const{
+        return get_time(column_index(col_name));
+    }
+
     bool SQLiteResult::next() {
         if (m_current_row + 1 < m_row_count) {
             ++m_current_row;
@@ -120,7 +187,10 @@ namespace cfl::db {
         m_data.resize(count);
     }
 
-    void SQLiteResult::add_column_name(const std::string &name) { m_column_names.push_back(name); }
+    void SQLiteResult::add_column_name(const std::string &name) {
+        m_column_names.push_back(name);
+        m_col_index[name] = m_column_names.size() - 1;
+    }
 
     void SQLiteResult::set_data(int row, int col, std::string &&value) {
         if ((int) m_data[row].size() < m_column_count) m_data[row].resize(m_column_count);

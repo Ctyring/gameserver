@@ -10,6 +10,7 @@
 #include "cfl/protos/gen_proto/game.pb.h"
 #include "cfl/protos/gen_proto/login_db.pb.h"
 #include "cfl/modules/module_base.h"
+#include "server_define.h"
 namespace cfl {
     /**
      * @class PlayerObject

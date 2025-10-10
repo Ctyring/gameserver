@@ -2,25 +2,15 @@
 #include <iostream>
 #include <algorithm>
 #include <filesystem>
-#include "cfl/cfl.h"
 namespace cfl {
     YAML::Node Config::game_info_ = YAML::Node();
     std::unordered_map<std::string, std::string> Config::db_params_;
 
     void Config::Init() {
-//        spdlog::info("Current path: {}", std::filesystem::current_path().string());
-
         InitLogging("configs/config.yaml");
         InitGameInfo("configs/game_info.yaml");
         InitMysqlInfo("configs/mysql.yaml");
     }
-
-//    void Config::TestGet() {
-//        int area_id = GetGameInfo("area_id", 1);
-//        int share_page_size = GetGameInfo("share_page_size", 1);
-//        spdlog::info("Area id: {}", area_id);
-//        spdlog::info("share_page_size: {}", share_page_size);
-//    }
 
     spdlog::level::level_enum Config::LevelFromString(const std::string &level_str) {
         std::string lvl = level_str;
@@ -146,12 +136,6 @@ namespace cfl {
                 auto value = it->second.as<std::string>();
                 db_params_[key] = value;
             }
-
-//            spdlog::info("MySQL config loaded: {}", yaml_path);
-//            for (const auto &kv : db_params_) {
-//                spdlog::info("  {} = {}", kv.first, kv.second);
-//            }
-
         } catch (const std::exception &ex) {
             spdlog::error("Failed to initialize mysql info from {}: {}", yaml_path, ex.what());
         }

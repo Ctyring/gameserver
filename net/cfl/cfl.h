@@ -9,7 +9,6 @@
 #include <string>
 #include "config.h"
 #include "db/db.h"
-#include "server_define.h"
 #include "net_config.h"
 
 #if defined(_WIN32) || defined(_WIN64)
@@ -43,7 +42,7 @@ namespace cfl {
     inline constexpr std::size_t PayOrderIdLen = 128;
 
     // 多语言
-    inline constexpr std::size_t MaxLanguageNum = 15;
+    inline constexpr std::size_t MaxLanguageNum = 16;
 
     // VIP
     inline constexpr std::size_t MaxVipLevel = 20;

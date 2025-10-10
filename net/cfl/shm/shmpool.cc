@@ -30,8 +30,6 @@ namespace cfl::shm {
             return true;
         };
         if (!add_pool(SHMTYPE::RoleData, [&] { return std::make_shared<SharedMemoryManager<RoleDataObject>>(static_cast<size_t>(SHMTYPE::RoleData), 1); })) return false;
-//        data_object_pools_[static_cast<size_t>(SHMTYPE::RoleData)] = new SharedMemoryManager<RoleDataObject>(static_cast<size_t>(SHMTYPE::RoleData), 1);
-//        data_object_pools_[static_cast<size_t>(SHMTYPE::RoleData)]->initialize_block_map();
         return true;
     }
 

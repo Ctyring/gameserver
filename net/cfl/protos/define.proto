@@ -1,0 +1,242 @@
+syntax = "proto3";
+
+//==============================
+// 对象类型
+//==============================
+enum ObjectType {
+    object_none      = 0;  // 无
+    object_player    = 1;  // 玩家
+    object_npc       = 2;  // NPC
+    object_monster   = 3;  // 怪
+    object_pet       = 4;  // 宠物
+    object_mount     = 5;  // 坐骑
+    object_machine   = 6;  // 机关
+    object_partner   = 7;  // 伙伴
+    object_summon    = 8;  // 招唤物
+}
+
+//==============================
+// 动作类型
+//==============================
+enum ActionType {
+    action_none       = 0;   // 无
+    action_idle       = 1;   // 待机
+    action_fix_body   = 2;   // 定身
+    action_walk       = 3;   // 行走
+    action_run        = 4;   // 跑动
+    action_fly        = 5;   // 飞行
+    action_skill      = 6;   // 技能
+    action_mine       = 7;   // 采集
+    action_roll       = 8;   // 翻滚
+    action_jump       = 9;   // 跳跃
+    action_born       = 10;  // 出生
+    action_dance      = 11;  // 跳舞
+    action_dead       = 12;  // 死亡
+    action_wound      = 13;  // 受击
+    action_beat_back  = 14;  // 击退
+    action_beat_down  = 15;  // 击倒
+    action_beat_fly   = 16;  // 击飞
+}
+
+//==============================
+// 动作状态
+//==============================
+enum ActionStatus {
+    action_status_none   = 0;          // 无动作
+    action_status_hurt   = 0x1;        // 伤害
+    action_status_start  = 0x2;        // 开始动作
+    action_status_end    = 0xfffffff;  // 技能动作结束
+}
+
+//==============================
+// 副本类型
+//==============================
+enum CopyType {
+    copy_none        = 0;   // 无阵营
+    copy_login       = 1;   // 登陆副本
+    copy_sel_role    = 2;   // 选角副本
+    copy_city        = 3;   // 主城
+    copy_main        = 4;   // 主线副本
+    copy_world       = 5;   // 大世界
+    copy_end         = 100; // 结束标记
+}
+
+//==============================
+// 对象状态
+//==============================
+enum ObjectStatus {
+    status_none             = 0; // 无
+    status_dead             = 1; // 死亡
+    status_not_move         = 2; // 不能移动
+    status_not_cast         = 3; // 不能放技能
+    status_not_be_hurt      = 4; // 不能被攻击
+    status_not_be_control   = 5; // 无法被控制
+    status_stealth          = 6; // 不能被看见
+    status_blind            = 7; // 不能看见他人
+}
+
+//==============================
+// 物品类型
+//==============================
+enum ItemType {
+    item_none       = 0;  // 无
+    item_money      = 1;  // 金钱
+    item_action     = 2;  // 行动物品
+    item_item       = 3;  // 普通物品
+    item_equip      = 4;  // 装备
+    item_gem        = 5;  // 宝石
+    item_relics     = 6;  // 圣物
+    item_mount      = 7;  // 坐骑
+    item_pet        = 8;  // 宠物
+    item_partner    = 9;  // 伙伴
+    item_fashion    = 10; // 时装
+    item_box        = 11; // 宝箱
+    item_act_box    = 12; // 活动宝箱
+    item_chip       = 13; // 碎片
+    item_rune       = 14; // 符文
+    item_drug       = 15; // 药剂
+}
+
+//==============================
+// 背包类型
+//==============================
+enum BagType {
+    bag_none     = 0;  // 无
+    bag_item     = 1;  // 普通物品
+    bag_gem      = 2;  // 宝石
+    bag_fashion  = 3;  // 时装
+    bag_chip     = 4;  // 碎片
+    bag_rune     = 5;  // 符文
+    bag_task     = 6;  // 任务物品
+    bag_soul     = 7;  // 灵魂
+    bag_card     = 8;  // 英雄卡
+}
+
+//==============================
+// 功能类型
+//==============================
+enum FunctionType {
+    func_begin_id  = 0;   // 功能ID开始标记
+    func_end_id    = 150; // 功能ID结束标记
+}
+
+//==============================
+// 属性ID
+//==============================
+enum AttrId {
+    attr_hp            = 0;  // 生命值
+    attr_mp            = 1;  // 魔法值
+    attr_hp_max        = 2;  // 最大生命值
+    attr_mp_max        = 3;  // 最大魔法值
+    attr_speed         = 4;  // 移动速度
+    attr_attack        = 5;  // 攻击
+    attr_element       = 6;  // 元素伤害
+    attr_magic_def     = 7;  // 魔防
+    attr_physic_def    = 8;  // 物防
+    attr_hit_rate      = 9;  // 命中
+    attr_dodge         = 10; // 闪避
+    attr_more_hurt     = 11; // 伤害加深
+    attr_less_hurt     = 12; // 伤害减免
+    attr_crit_hit      = 13; // 暴击
+    attr_crit_def      = 14; // 抗暴
+    attr_crit_hurt     = 15; // 暴伤
+    attr_num           = 16; // 属性个数
+}
+
+//==============================
+// 阵营关系
+//==============================
+enum ShipRelation {
+    ship_neutral = 0; // 中立
+    ship_friend  = 1; // 友方
+    ship_enemy   = 2; // 敌方
+}
+
+//==============================
+// 技能目标阵营类型
+//==============================
+enum HitShipType {
+    hit_all     = 0; // 全部目标
+    hit_friend  = 1; // 仅友方
+    hit_enemy   = 2; // 仅敌方
+}
+
+//==============================
+// Buff类型
+//==============================
+enum BuffType {
+    buff_none = 0; // 无
+}
+
+//==============================
+// 聊天频道
+//==============================
+enum ChatChannel {
+    chat_none      = 0; // 无
+    chat_world     = 1; // 世界聊天
+    chat_private   = 2; // 私聊
+    chat_guild     = 3; // 公会
+    chat_roll_tip  = 4; // 跑马灯
+}
+
+//==============================
+// 装备位置
+//==============================
+enum EquipPos {
+    equip_none       = 0; // 无
+    equip_helmet     = 1; // 头盔
+    equip_necklace   = 2; // 项链
+    equip_armor      = 3; // 铠甲
+    equip_shoes      = 4; // 鞋子
+    equip_wrist      = 5; // 护腕
+    equip_ring       = 6; // 戒指
+    equip_talisman   = 7; // 护符
+    equip_weapon     = 8; // 武器
+}
+
+//==============================
+// 任务状态
+//==============================
+enum TaskStatus {
+    task_init    = 0; // 初始
+    task_accept  = 1; // 已接取
+    task_finish  = 2; // 已完成
+    task_commit  = 3; // 已提交
+}
+
+//==============================
+// 副本战斗结果
+//==============================
+enum CopyResult {
+    copy_none_result = 0; // 未结算
+    copy_win         = 1; // 胜利
+    copy_lost        = 2; // 失败
+    copy_draw        = 3; // 平局
+}
+
+//==============================
+// 公会职位
+//==============================
+enum GuildPos {
+    guild_member      = 0; // 成员
+    guild_leader      = 1; // 会长
+    guild_vice_leader = 2; // 副会长
+}
+
+//==============================
+// 邮件类型
+//==============================
+enum MailType {
+    mail_begin   = 0; // 无效值
+    mail_custom  = 1; // 自定义邮件
+}
+
+//==============================
+// 邮件状态
+//==============================
+enum MailStatus {
+    mail_new      = 0; // 新邮件
+    mail_received = 1; // 奖励已领取
+}
+
+
