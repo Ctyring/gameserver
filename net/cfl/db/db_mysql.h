@@ -348,11 +348,12 @@ namespace cfl::db {
         using MutexType = std::mutex;
 
         MySQLManager(){
+            spdlog::info("MySQLManager init");
             register_mysql("db_game");
             register_mysql("db_log");
             register_mysql("db_gm");
             register_mysql("db_account");
-            register_mysql("test");
+//            register_mysql("test");
         }
 
         ~MySQLManager();
@@ -451,9 +452,6 @@ namespace cfl::db {
     public:
         using DataPtr = SqlData::Ptr;
 
-        /// 执行查询
-        [[nodiscard]] static DataPtr query(std::string_view name, std::string_view sql);
-
         /// 执行格式化查询
         template<typename... Args>
         [[nodiscard]] static DataPtr query_fmt(std::string_view name, std::string_view fmt, Args &&... args) {
@@ -461,18 +459,12 @@ namespace cfl::db {
             return query(name, sql);
         }
 
-        /// 尝试执行查询（重试 count 次）
-        [[nodiscard]] static DataPtr try_query(std::string_view name, uint32_t count, std::string_view sql);
-
         template<typename... Args>
         [[nodiscard]] static DataPtr
         try_query_fmt(std::string_view name, uint32_t count, std::string_view fmt, Args &&... args) {
             auto sql = std::vformat(fmt, std::make_format_args(std::forward<Args>(args)...));
             return try_query(name, count, sql);
         }
-
-        /// 执行更新
-        static int execute(std::string_view name, std::string_view sql);
 
         template<typename... Args>
         static int execute_prepared(const char *name, const char *sql, Args &&... args) {
@@ -491,13 +483,72 @@ namespace cfl::db {
             return execute(name, sql);
         }
 
-        /// 尝试执行更新（重试 count 次）
-        static int try_execute(std::string_view name, uint32_t count, std::string_view sql);
-
         template<typename... Args>
         static int try_execute_fmt(std::string_view name, uint32_t count, std::string_view fmt, Args &&... args) {
             auto sql = std::vformat(fmt, std::make_format_args(std::forward<Args>(args)...));
             return try_execute(name, count, sql);
+        }
+
+        static MySQLUtil::DataPtr query(std::string_view name, std::string_view sql) {
+            auto db = MySQLMgr::instance()->get(std::string{name});
+            if (!db) {
+                throw std::runtime_error(std::format("MySQLUtil::query - no datasource [{}]", name));
+            }
+            return db->query(sql);
+        }
+
+        static MySQLUtil::DataPtr try_query(std::string_view name, uint32_t count, std::string_view sql) {
+            for (uint32_t i = 0; i < count; ++i) {
+                try {
+                    auto db = MySQLMgr::instance()->get(std::string{name});
+//                auto db = MySQLManager::instance().get(std::string{name});
+                    if (!db) {
+                        throw std::runtime_error(std::format("MySQLUtil::try_query - no datasource [{}]", name));
+                    }
+                    auto res = db->query(sql);
+                    if (res) {
+                        return res;
+                    }
+                } catch (const std::exception &ex) {
+                    if (i + 1 == count) {
+                        throw; // 最后一次失败直接抛出
+                    }
+                    // 小延迟再试，可以根据需要调整
+                    std::this_thread::sleep_for(std::chrono::milliseconds(50));
+                }
+            }
+            return nullptr;
+        }
+
+        static int execute(std::string_view name, std::string_view sql) {
+            auto db = MySQLMgr::instance()->get(std::string{name});
+//        auto db = MySQLManager::instance().get(std::string{name});
+            if (!db) {
+                throw std::runtime_error(std::format("MySQLUtil::execute - no datasource [{}]", name));
+            }
+            return db->execute(sql);
+        }
+
+        static int try_execute(std::string_view name, uint32_t count, std::string_view sql) {
+            for (uint32_t i = 0; i < count; ++i) {
+                try {
+                    auto db = MySQLMgr::instance()->get(std::string{name});
+//                auto db = MySQLManager::instance().get(std::string{name});
+                    if (!db) {
+                        throw std::runtime_error(std::format("MySQLUtil::try_execute - no datasource [{}]", name));
+                    }
+                    auto rt = db->execute(sql);
+                    if (rt >= 0) {
+                        return rt;
+                    }
+                } catch (const std::exception &ex) {
+                    if (i + 1 == count) {
+                        throw; // 最后一次失败抛出
+                    }
+                    std::this_thread::sleep_for(std::chrono::milliseconds(50));
+                }
+            }
+            return -1;
         }
     };
 

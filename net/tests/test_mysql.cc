@@ -16,7 +16,7 @@ int main() {
         cfl::Config::Init();
 
         // 注册数据库
-//        MySQLMgr::instance()->register_mysql("test");
+        MySQLMgr::instance()->register_mysql("test");
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
         // 测试1: 基本查询
