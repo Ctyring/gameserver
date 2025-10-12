@@ -1,7 +1,7 @@
 #include "role_module.h"
 #include "cfl/shm/shmpool.h"
 #include "cfl/static_data.h"
-
+#include "cfl/simple_manager.h"
 namespace cfl{
     RoleModule::RoleModule(PlayerObjPtr owner)
         : ModuleBase(std::move(owner))
@@ -50,12 +50,12 @@ namespace cfl{
         if(role_data_object_->logoffTime < role_data_object_->logonTime){
             // 处理异常数据
             role_data_object_->logoffTime = role_data_object_->logonTime + 1;
-            // todo: 重新设置登出时间
+            SimpleManager::instance().setLogoffTime(get_role_id(), role_data_object_->logoffTime);
         }
 
         role_data_object_->logonTime = cfl::get_timestamp();
         role_data_object_->unlock();
-        // todo: 重新设置登录时间
+        SimpleManager::instance().setLogonTime(get_role_id(), role_data_object_->logonTime);
         return true;
     }
 

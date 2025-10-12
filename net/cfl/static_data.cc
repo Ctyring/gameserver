@@ -51,7 +51,7 @@ namespace cfl {
             spdlog::error("load config db error");
             return false;
         }
-        spdlog::error("load config db success");
+
         for (auto &func: data_func_list) {
             auto name = func.table_name;
             auto result = db->query("select * from " + name);
