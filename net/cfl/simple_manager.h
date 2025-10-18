@@ -57,7 +57,7 @@ namespace cfl {
          * @param id 角色ID。
          * @return SimpleInfo* 指向角色信息的指针；若不存在则返回 nullptr。
          */
-        [[nodiscard]] SimpleInfo *getSimpleInfoById(std::uint64_t id) noexcept;
+        [[nodiscard]] SimpleInfo *get_simple_info_by_id(std::uint64_t id) noexcept;
 
         /**
          * @brief 创建一个新的角色信息对象并插入管理器。
@@ -67,7 +67,7 @@ namespace cfl {
          * @param careerId 职业ID。
          * @return SimpleInfo* 指向新建的 SimpleInfo 对象。
          */
-        [[nodiscard]] SimpleInfo *createSimpleInfo(std::uint64_t roleId,
+        [[nodiscard]] SimpleInfo *create_simple_info(std::uint64_t roleId,
                                                    std::uint64_t accountId,
                                                    std::string_view name,
                                                    std::uint32_t careerId);
@@ -77,41 +77,41 @@ namespace cfl {
          * @param info 智能指针包装的 SimpleInfo 对象。
          * @return true 插入成功；false 插入失败（例如 info 为 nullptr）。
          */
-        bool addSimpleInfo(std::unique_ptr<SimpleInfo> info);
+        bool add_simple_info(std::unique_ptr<SimpleInfo> info);
 
         /**
          * @brief 从数据库加载所有玩家数据。
          * @return true 加载成功；false 加载失败。
          */
-        bool loadData();
+        bool load_data();
 
         /**
          * @brief 通过角色名获取角色ID。
          * @param name 角色名。
          * @return 角色ID；若未找到则返回 0。
          */
-        [[nodiscard]] std::uint64_t getRoleIdByName(std::string_view name) const noexcept;
+        [[nodiscard]] std::uint64_t get_role_id_by_name(std::string_view name) const noexcept;
 
         /**
          * @brief 获取角色创建时间。
          * @param id 角色ID。
          * @return 创建时间戳；若不存在则返回 0。
          */
-        [[nodiscard]] std::uint64_t getCreateTime(std::uint64_t id) const noexcept;
+        [[nodiscard]] std::uint64_t get_create_time(std::uint64_t id) const noexcept;
 
         /**
          * @brief 获取角色上次登录时间。
          * @param id 角色ID。
          * @return 登录时间戳；若不存在则返回 0。
          */
-        [[nodiscard]] std::uint64_t getLogonTime(std::uint64_t id) const noexcept;
+        [[nodiscard]] std::uint64_t get_logon_time(std::uint64_t id) const noexcept;
 
         /**
          * @brief 获取角色上次登出时间。
          * @param id 角色ID。
          * @return 登出时间戳；若不存在则返回 0。
          */
-        [[nodiscard]] std::uint64_t getLogoffTime(std::uint64_t id) const noexcept;
+        [[nodiscard]] std::uint64_t get_logoff_time(std::uint64_t id) const noexcept;
 
         /**
          * @brief 设置角色创建时间。
@@ -119,7 +119,7 @@ namespace cfl {
          * @param time 创建时间戳。
          * @return true 设置成功；false 角色不存在。
          */
-        bool setCreateTime(std::uint64_t id, std::uint64_t time) noexcept;
+        bool set_create_time(std::uint64_t id, std::uint64_t time) noexcept;
 
         /**
          * @brief 设置角色登录时间。
@@ -127,7 +127,7 @@ namespace cfl {
          * @param time 登录时间戳。
          * @return true 设置成功；false 角色不存在。
          */
-        bool setLogonTime(std::uint64_t id, std::uint64_t time) noexcept;
+        bool set_logon_time(std::uint64_t id, std::uint64_t time) noexcept;
 
         /**
          * @brief 设置角色登出时间。
@@ -135,14 +135,14 @@ namespace cfl {
          * @param time 登出时间戳。
          * @return true 设置成功；false 角色不存在。
          */
-        bool setLogoffTime(std::uint64_t id, std::uint64_t time) noexcept;
+        bool set_logoff_time(std::uint64_t id, std::uint64_t time) noexcept;
 
         /**
          * @brief 获取角色当前战斗力。
          * @param id 角色ID。
          * @return 战斗力数值；若不存在则返回 0。
          */
-        [[nodiscard]] std::uint64_t getFightValue(std::uint64_t id) const noexcept;
+        [[nodiscard]] std::uint64_t get_fight_value(std::uint64_t id) const noexcept;
 
         /**
          * @brief 设置角色战斗力与等级。
@@ -151,7 +151,7 @@ namespace cfl {
          * @param level 新的等级。
          * @return true 设置成功；false 角色不存在。
          */
-        bool setFightValue(std::uint64_t id, std::uint64_t value, std::uint32_t level) noexcept;
+        bool set_fight_value(std::uint64_t id, std::uint64_t value, std::uint32_t level) noexcept;
 
         /**
          * @brief 修改角色名称。
@@ -159,7 +159,7 @@ namespace cfl {
          * @param name 新角色名。
          * @return true 设置成功；false 失败（例如重名）。
          */
-        bool setName(std::uint64_t id, std::string_view name);
+        bool set_name(std::uint64_t id, std::string_view name);
 
         /**
          * @brief 设置角色VIP等级。
@@ -167,7 +167,7 @@ namespace cfl {
          * @param vipLevel 新VIP等级。
          * @return true 设置成功；false 角色不存在。
          */
-        bool setVipLevel(std::uint64_t id, std::uint32_t vipLevel) noexcept;
+        bool set_vip_level(std::uint64_t id, std::uint32_t vipLevel) noexcept;
 
         /**
          * @brief 设置角色所属公会ID。
@@ -175,7 +175,7 @@ namespace cfl {
          * @param guildId 公会ID。
          * @return true 设置成功；false 角色不存在。
          */
-        bool setGuildId(std::uint64_t id, std::uint64_t guildId) noexcept;
+        bool set_guild_id(std::uint64_t id, std::uint64_t guildId) noexcept;
 
         /**
          * @brief 标记角色是否被删除。
@@ -183,14 +183,14 @@ namespace cfl {
          * @param deleted true 表示角色被删除。
          * @return true 设置成功；false 角色不存在。
          */
-        bool setRoleDeleted(std::uint64_t id, bool deleted) noexcept;
+        bool set_role_deleted(std::uint64_t id, bool deleted) noexcept;
 
         /**
          * @brief 检查某角色名是否已存在。
          * @param name 角色名。
          * @return true 名称存在；false 名称未被使用。
          */
-        [[nodiscard]] bool checkNameExist(std::string_view name) const noexcept;
+        [[nodiscard]] bool check_name_exist(std::string_view name) const noexcept;
 
         /**
          * @brief 检查角色名格式是否合法。
@@ -201,20 +201,20 @@ namespace cfl {
          * - 长度在 [4, 20] 字符之间。
          * - 不包含 `,;'\" \\%%\r\n` 等非法字符。
          */
-        [[nodiscard]] bool checkNameFormat(std::string_view name) const noexcept;
+        [[nodiscard]] bool check_name_format(std::string_view name) const noexcept;
 
         /**
          * @brief 获取角色所属公会ID。
          * @param id 角色ID。
          * @return 公会ID；若不存在则返回 0。
          */
-        [[nodiscard]] std::uint64_t getGuildId(std::uint64_t id) const noexcept;
+        [[nodiscard]] std::uint64_t get_guild_id(std::uint64_t id) const noexcept;
 
         /**
          * @brief 获取当前管理的角色总数量。
          * @return 角色总数。
          */
-        [[nodiscard]] std::uint32_t getTotalCount() const noexcept;
+        [[nodiscard]] std::uint32_t get_total_count() const noexcept;
 
         /**
          * @brief 通过账号ID获取该账号下的所有角色ID。
@@ -222,7 +222,7 @@ namespace cfl {
          * @param roleIds 输出参数，用于存储角色ID列表。
          * @return true 查询成功。
          */
-        bool getRoleIdsByAccountId(std::uint64_t accountId, std::vector<std::uint64_t> &roleIds) const;
+        bool get_role_ids_by_account_id(std::uint64_t accountId, std::vector<std::uint64_t> &roleIds) const;
 
     private:
         /**

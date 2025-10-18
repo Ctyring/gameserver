@@ -91,4 +91,9 @@ namespace cfl {
 
         return true;
     }
+
+    inline std::string str_copy(std::string_view src, std::size_t max_len) {
+        if (max_len == 0) return {};
+        return std::string(src.substr(0, max_len - 1));
+    }
 }

@@ -173,9 +173,13 @@ namespace cfl::db {
  * @param idx 列索引
  * @return 字节数组（二进制数据），存储在 std::string 中
  */
-    [[nodiscard]] std::string MySQLResult::get_blob(int idx) const {
+    [[nodiscard]] std::vector<std::byte> MySQLResult::get_blob(int idx) const {
         if (m_current[idx].isNull()) return {};
-        return m_current[idx].get<std::string>();
+        auto str = m_current[idx].get<std::string>();
+        return {
+                reinterpret_cast<const std::byte*>(str.data()),
+                reinterpret_cast<const std::byte*>(str.data() + str.size())
+        };
     }
 
 /**
@@ -284,7 +288,7 @@ namespace cfl::db {
         return get_string(column_index(col_name));
     }
 
-    [[nodiscard]] std::string MySQLResult::get_blob(std::string_view col_name) const {
+    [[nodiscard]] std::vector<std::byte> MySQLResult::get_blob(std::string_view col_name) const {
         return get_blob(column_index(col_name));
     }
 

@@ -85,7 +85,7 @@ namespace cfl::db {
         /// 获取指定列的字符串
         [[nodiscard]] virtual std::string get_string(int idx) const = 0;
         /// 获取指定列的二进制数据（BLOB）
-        [[nodiscard]] virtual std::string get_blob(int idx) const = 0;
+        [[nodiscard]] virtual std::vector<std::byte> get_blob(int idx) const = 0;
         /// 获取指定列的时间戳
         [[nodiscard]] virtual std::time_t get_time(int idx) const = 0;
 
@@ -116,7 +116,7 @@ namespace cfl::db {
         /// 获取指定列的字符串
         [[nodiscard]] virtual std::string get_string(std::string_view col_name) const = 0;
         /// 获取指定列的二进制数据（BLOB）
-        [[nodiscard]] virtual std::string get_blob(std::string_view col_name) const = 0;
+        [[nodiscard]] virtual std::vector<std::byte> get_blob(std::string_view col_name) const = 0;
         /// 获取指定列的时间戳
         [[nodiscard]] virtual std::time_t get_time(std::string_view col_name) const = 0;
         /**

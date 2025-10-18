@@ -102,9 +102,14 @@ namespace cfl::db {
 
     std::string SQLiteResult::get_string(int idx) const { return m_data[m_current_row][idx]; }
 
-    std::string SQLiteResult::get_blob(int idx) const {
-        return std::string(m_data[m_current_row][idx].data(), m_data[m_current_row][idx].size());
+    std::vector<std::byte> SQLiteResult::get_blob(int idx) const {
+        const auto& str = m_data[m_current_row][idx];
+        std::vector<std::byte> blob(str.size());
+        std::transform(str.begin(), str.end(), blob.begin(),
+                       [](char c) { return std::byte(c); });
+        return blob;
     }
+
 
     std::time_t SQLiteResult::get_time(int idx) const { return std::stoll(m_data[m_current_row][idx]); }
 
@@ -164,7 +169,7 @@ namespace cfl::db {
         return get_string(column_index(col_name));
     }
 
-    [[nodiscard]] std::string SQLiteResult::get_blob(std::string_view col_name) const{
+    [[nodiscard]] std::vector<std::byte> SQLiteResult::get_blob(std::string_view col_name) const{
         return get_blob(column_index(col_name));
     }
 

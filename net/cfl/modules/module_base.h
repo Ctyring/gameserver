@@ -24,7 +24,7 @@ namespace cfl {
      */
     class ModuleBase {
     public:
-        using PlayerObjPtr = std::shared_ptr<PlayerObject>;
+        using PlayerObjPtr = PlayerObject*;
         /**
          * @brief 构造函数
          * @param owner 指向所属的玩家对象
@@ -135,7 +135,7 @@ namespace cfl {
         PlayerObjPtr get_owner();
 
     protected:
-        PlayerObjPtr owner_player{nullptr};   ///< 所属玩家对象指针
+        PlayerObjPtr owner_player;   ///< 所属玩家对象指针
         std::set<std::uint64_t> change_set;     ///< 需要同步/保存的数据ID集合
         std::set<std::uint64_t> remove_set;     ///< 需要删除的数据ID集合
     };

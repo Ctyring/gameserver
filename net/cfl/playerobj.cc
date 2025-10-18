@@ -1,4 +1,6 @@
 #include "playerobj.h"
+#include "cfl/modules/role_module.h"
+#include "cfl/modules/mail_module.h"
 
 namespace cfl {
     bool PlayerObject::init(std::uint64_t role_id) {
@@ -11,7 +13,7 @@ namespace cfl {
         is_online_ = false;
         room_id_ = 0;
 
-        create_all_modules();
+//        create_all_modules();
         return true;
     }
 
@@ -32,7 +34,7 @@ namespace cfl {
     bool PlayerObject::on_create(std::uint64_t role_id) {
         for (auto type = static_cast<int>(ModuleType::Role);
              type < static_cast<int>(ModuleType::End); type++) {
-            auto *module = modules_.at(type);
+            auto module = modules_.at(type);
             if (module == nullptr || !module->on_create(role_id)) {
                 return false;
             }
@@ -48,7 +50,7 @@ namespace cfl {
     bool PlayerObject::on_login() {
         for (auto type = static_cast<int>(ModuleType::Role);
              type < static_cast<int>(ModuleType::End); type++) {
-            auto *module = modules_.at(type);
+            auto module = modules_.at(type);
             if (module == nullptr || !module->on_login()) {
                 return false;
             }
@@ -61,7 +63,7 @@ namespace cfl {
     bool PlayerObject::on_logout() {
         for (auto type = static_cast<int>(ModuleType::Role);
              type < static_cast<int>(ModuleType::End); type++) {
-            auto *module = modules_.at(type);
+            auto module = modules_.at(type);
             if (module == nullptr || !module->on_logout()) {
                 return false;
             }
@@ -75,7 +77,7 @@ namespace cfl {
     bool PlayerObject::on_new_day() {
         for (auto type = static_cast<int>(ModuleType::Role);
              type < static_cast<int>(ModuleType::End); type++) {
-            auto *module = modules_.at(type);
+            auto module = modules_.at(type);
             if (module == nullptr || !module->on_new_day()) {
                 return false;
             }
@@ -86,7 +88,7 @@ namespace cfl {
     bool PlayerObject::read_from_db_login_data(DBRoleLoginAck &ack) {
         for (auto type = static_cast<int>(ModuleType::Role);
              type < static_cast<int>(ModuleType::End); type++) {
-            auto *module = modules_.at(type);
+            auto module = modules_.at(type);
             if (module == nullptr || !module->read_from_db_login_data(ack)) {
                 return false;
             }
@@ -96,14 +98,15 @@ namespace cfl {
 
     bool PlayerObject::create_all_modules() {
         modules_.resize(static_cast<std::size_t>(ModuleType::End));
-        //        modules_[static_cast<std::size_t>(ModuleType::Role)] = new CPlayerObject;
+        modules_[static_cast<std::size_t>(ModuleType::Role)] = std::make_shared<RoleModule>(this);
+        modules_[static_cast<std::size_t>(ModuleType::Mail)] = std::make_shared<MailModule>(this);
         return true;
     }
 
     bool PlayerObject::destroy_all_modules() {
         for (auto type = static_cast<int>(ModuleType::Role);
              type < static_cast<int>(ModuleType::End); type++) {
-            auto *module = modules_.at(type);
+            auto module = modules_.at(type);
             if (module == nullptr || !module->on_destroy()) {
                 return false;
             }

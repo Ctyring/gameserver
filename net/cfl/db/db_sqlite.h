@@ -147,7 +147,7 @@ namespace cfl::db {
         [[nodiscard]] std::string get_string(int idx) const override;
 
         /// 获取 BLOB 数据
-        [[nodiscard]] std::string get_blob(int idx) const override;
+        [[nodiscard]] std::vector<std::byte> get_blob(int idx) const override;
 
         /// 获取时间
         [[nodiscard]] std::time_t get_time(int idx) const override;
@@ -178,7 +178,7 @@ namespace cfl::db {
 
         [[nodiscard]] std::string get_string(std::string_view col_name) const override;
 
-        [[nodiscard]] std::string get_blob(std::string_view col_name) const override;
+        [[nodiscard]] std::vector<std::byte> get_blob(std::string_view col_name) const override;
 
         [[nodiscard]] std::time_t get_time(std::string_view col_name) const override;
 

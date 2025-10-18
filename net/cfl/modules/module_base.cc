@@ -3,11 +3,12 @@
 #include <cstdint>
 #include <set>
 #include <memory>
+#include <utility>
 #include "module_base.h"
 namespace cfl {
     ModuleBase::ModuleBase(PlayerObjPtr pOwner)
     {
-        owner_player = pOwner;
+        owner_player = std::move(pOwner);
     }
 
     bool ModuleBase::calc_fight_value(
@@ -27,20 +28,20 @@ namespace cfl {
     {
         change_set.insert(id);
 
-        return TRUE;
+        return true;
     }
 
     bool ModuleBase::add_remove_id(std::uint64_t id)
     {
         remove_set.insert(id);
 
-        return TRUE;
+        return true;
     }
 
     bool ModuleBase::set_owner(PlayerObjPtr owner)
     {
         owner_player = owner;
-        return TRUE;
+        return true;
     }
 
     ModuleBase::PlayerObjPtr ModuleBase::get_owner()

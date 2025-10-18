@@ -29,7 +29,7 @@ namespace cfl {
          * @brief 构造函数
          * @param owner 指向所属玩家对象的指针
          */
-        explicit RoleModule(PlayerObjPtr owner);
+        explicit RoleModule(ModuleBase::PlayerObjPtr owner);
 
         /**
          * @brief 析构函数

@@ -101,7 +101,7 @@ namespace cfl::db {
 
         [[nodiscard]] std::string get_string(int idx) const override;
 
-        [[nodiscard]] std::string get_blob(int idx) const override;
+        [[nodiscard]] std::vector<std::byte> get_blob(int idx) const override;
 
         [[nodiscard]] std::time_t get_time(int idx) const override;
 
@@ -131,7 +131,7 @@ namespace cfl::db {
 
         [[nodiscard]] std::string get_string(std::string_view col_name) const override;
 
-        [[nodiscard]] std::string get_blob(std::string_view col_name) const override;
+        [[nodiscard]] std::vector<std::byte> get_blob(std::string_view col_name) const override;
 
         [[nodiscard]] std::time_t get_time(std::string_view col_name) const override;
         bool next() override;
@@ -353,14 +353,9 @@ namespace cfl::db {
             register_mysql("db_log");
             register_mysql("db_gm");
             register_mysql("db_account");
-//            register_mysql("test");
         }
 
         ~MySQLManager();
-//        CFL_API static MySQLManager& instance() {
-//            static MySQLManager inst; // C++11+ 局部静态保证线程安全
-//            return inst;
-//        }
         /**
          * @brief 获取指定名称的数据源对应的 Database 对象
          */

@@ -4,7 +4,7 @@
 #include "cfl/simple_manager.h"
 namespace cfl{
     RoleModule::RoleModule(PlayerObjPtr owner)
-        : ModuleBase(std::move(owner))
+        : ModuleBase(owner)
     {
         register_message_handler();
     }
@@ -50,12 +50,12 @@ namespace cfl{
         if(role_data_object_->logoffTime < role_data_object_->logonTime){
             // 处理异常数据
             role_data_object_->logoffTime = role_data_object_->logonTime + 1;
-            SimpleManager::instance().setLogoffTime(get_role_id(), role_data_object_->logoffTime);
+            SimpleManager::instance().set_logoff_time(get_role_id(), role_data_object_->logoffTime);
         }
 
         role_data_object_->logonTime = cfl::get_timestamp();
         role_data_object_->unlock();
-        SimpleManager::instance().setLogonTime(get_role_id(), role_data_object_->logonTime);
+        SimpleManager::instance().set_logon_time(get_role_id(), role_data_object_->logonTime);
         return true;
     }
 

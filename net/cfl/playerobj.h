@@ -11,6 +11,7 @@
 #include "cfl/protos/gen_proto/login_db.pb.h"
 #include "cfl/modules/module_base.h"
 #include "server_define.h"
+#include "shm/shmpool.h"
 namespace cfl {
     /**
      * @class PlayerObject
@@ -23,7 +24,7 @@ namespace cfl {
      * - 模块管理（战斗、背包、任务等模块）
      * - 网络连接维护
      */
-    class PlayerObject : public HandlerManager {
+class PlayerObject : public HandlerManager, std::enable_shared_from_this<PlayerObject> {
     public:
         /**
          * @brief 默认构造函数。
@@ -92,7 +93,11 @@ namespace cfl {
          * @param data Protobuf 消息对象。
          * @return 是否成功。
          */
-        bool send_msg_protobuf(std::int32_t msg_id, const google::protobuf::Message &data);
+        bool send_msg_protobuf(std::int32_t msg_id, const google::protobuf::Message &data){
+            // todo
+            spdlog::error("[send_msg_protobuf] todo");
+            return true;
+        }
 
         /**
          * @brief 发送原始数据给客户端。
@@ -220,7 +225,10 @@ namespace cfl {
          * @param module_type 模块类型ID。
          * @return 模块基类指针。
          */
-        ModuleBase *get_module_by_type(std::uint32_t module_type);
+        std::shared_ptr<ModuleBase> get_module_by_type(ModuleType module_type){
+            auto type_idx = static_cast<int>(module_type);
+            return modules_.at(type_idx);
+        }
 
         /**
          * @brief 检查进入副本的条件。
@@ -297,6 +305,6 @@ namespace cfl {
         bool is_main_city_{true};          ///< 是否为主城状态
 
         // 模块容器
-        std::vector<ModuleBase *> modules_; ///< 玩家模块集合
+        std::vector<std::shared_ptr<ModuleBase>> modules_; ///< 玩家模块集合
     };
 }

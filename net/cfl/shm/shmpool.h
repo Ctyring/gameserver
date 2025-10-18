@@ -16,6 +16,9 @@
 namespace cfl::shm {
     enum class SHMTYPE : size_t {
         RoleData,
+        Global,
+        Mail,
+        GroupMail,
         End,
     };
     using SharedMemoryManagerBasePtr = std::shared_ptr<SharedMemoryManagerBase>;
@@ -56,7 +59,10 @@ namespace cfl::shm {
 
     private:
         /// @brief 私有构造函数，确保单例模式
-        DataPoolManager() = default;
+        DataPoolManager(){
+            spdlog::info("[DataPoolManager] DataPoolManager()");
+            init();
+        }
 
         /// @brief 私有析构函数
         ~DataPoolManager() = default;

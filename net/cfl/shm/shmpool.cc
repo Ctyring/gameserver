@@ -1,5 +1,8 @@
 #include "shmpool.h"
 #include "obj/role_data_obj.h"
+#include "obj/global_data_obj.h"
+#include "obj/mail_data_obj.h"
+//#include "obj/role_data_obj.h"
 namespace cfl::shm {
 
     DataPoolManager &DataPoolManager::instance() {
@@ -29,7 +32,10 @@ namespace cfl::shm {
             data_object_pools_[idx]->initialize_block_map();
             return true;
         };
-        if (!add_pool(SHMTYPE::RoleData, [&] { return std::make_shared<SharedMemoryManager<RoleDataObject>>(static_cast<size_t>(SHMTYPE::RoleData), 1); })) return false;
+        if (!add_pool(SHMTYPE::RoleData, [&] { return std::make_shared<SharedMemoryManager<RoleDataObject>>(static_cast<size_t>(SHMTYPE::RoleData), 1024); })) return false;
+        if (!add_pool(SHMTYPE::Global, [&] { return std::make_shared<SharedMemoryManager<GlobalDataObject>>(static_cast<size_t>(SHMTYPE::Global), 1024); })) return false;
+        if (!add_pool(SHMTYPE::Mail, [&] { return std::make_shared<SharedMemoryManager<MailDataObject>>(static_cast<size_t>(SHMTYPE::Mail), 1024); })) return false;
+        if (!add_pool(SHMTYPE::GroupMail, [&] { return std::make_shared<SharedMemoryManager<GroupMailDataObject>>(static_cast<size_t>(SHMTYPE::GroupMail), 1024); })) return false;
         return true;
     }
 

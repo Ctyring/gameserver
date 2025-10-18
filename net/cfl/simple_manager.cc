@@ -7,7 +7,7 @@ namespace cfl {
         return instance;
     }
 
-    bool SimpleManager::loadData() {
+    bool SimpleManager::load_data() {
         auto query = db::MySQLUtil::query("db_game", "SELECT * FROM player");;
         while (query->next()) {
             auto info = std::make_unique<SimpleInfo>();
@@ -22,47 +22,47 @@ namespace cfl {
             info->level = query->get_int32("level");
             info->vip_level = query->get_int32("viplevel");
 
-            addSimpleInfo(std::move(info));
+            add_simple_info(std::move(info));
         }
         return true;
     }
 
-    SimpleInfo *SimpleManager::getSimpleInfoById(std::uint64_t id) noexcept {
+    SimpleInfo *SimpleManager::get_simple_info_by_id(std::uint64_t id) noexcept {
         auto it = id_to_info_.find(id);
         return (it != id_to_info_.end()) ? it->second.get() : nullptr;
     }
 
-    std::uint64_t SimpleManager::getRoleIdByName(std::string_view name) const noexcept {
+    std::uint64_t SimpleManager::get_role_id_by_name(std::string_view name) const noexcept {
         auto it = name_to_id_.find(std::string(name));
         return (it != name_to_id_.end()) ? it->second : 0;
     }
 
-    std::uint64_t SimpleManager::getCreateTime(std::uint64_t id) const noexcept {
-        if (auto info = instance().getSimpleInfoById(id))
+    std::uint64_t SimpleManager::get_create_time(std::uint64_t id) const noexcept {
+        if (auto info = instance().get_simple_info_by_id(id))
             return info->create_time;
         return 0;
     }
 
-    std::uint64_t SimpleManager::getLogonTime(std::uint64_t id) const noexcept {
-        if (auto info = instance().getSimpleInfoById(id))
+    std::uint64_t SimpleManager::get_logon_time(std::uint64_t id) const noexcept {
+        if (auto info = instance().get_simple_info_by_id(id))
             return info->logon_time;
         return 0;
     }
 
-    std::uint64_t SimpleManager::getLogoffTime(std::uint64_t id) const noexcept {
-        if (auto info = instance().getSimpleInfoById(id))
+    std::uint64_t SimpleManager::get_logoff_time(std::uint64_t id) const noexcept {
+        if (auto info = instance().get_simple_info_by_id(id))
             return info->logoff_time;
         return 0;
     }
 
-    std::uint64_t SimpleManager::getFightValue(std::uint64_t id) const noexcept {
-        if (auto info = instance().getSimpleInfoById(id))
+    std::uint64_t SimpleManager::get_fight_value(std::uint64_t id) const noexcept {
+        if (auto info = instance().get_simple_info_by_id(id))
             return info->fight_value;
         return 0;
     }
 
-    bool SimpleManager::setFightValue(std::uint64_t id, std::uint64_t value, std::uint32_t level) noexcept {
-        if (auto info = getSimpleInfoById(id)) {
+    bool SimpleManager::set_fight_value(std::uint64_t id, std::uint64_t value, std::uint32_t level) noexcept {
+        if (auto info = get_simple_info_by_id(id)) {
             info->fight_value = value;
             info->level = level;
             return true;
@@ -70,8 +70,8 @@ namespace cfl {
         return false;
     }
 
-    bool SimpleManager::setName(std::uint64_t id, std::string_view name) {
-        auto *info = getSimpleInfoById(id);
+    bool SimpleManager::set_name(std::uint64_t id, std::string_view name) {
+        auto *info = get_simple_info_by_id(id);
         if (!info) return false;
 
         // 移除旧名称映射
@@ -86,76 +86,76 @@ namespace cfl {
         return true;
     }
 
-    bool SimpleManager::setCreateTime(std::uint64_t id, std::uint64_t time) noexcept {
-        if (auto info = getSimpleInfoById(id)) {
+    bool SimpleManager::set_create_time(std::uint64_t id, std::uint64_t time) noexcept {
+        if (auto info = get_simple_info_by_id(id)) {
             info->create_time = time;
             return true;
         }
         return false;
     }
 
-    bool SimpleManager::setLogonTime(std::uint64_t id, std::uint64_t time) noexcept {
-        if (auto info = getSimpleInfoById(id)) {
+    bool SimpleManager::set_logon_time(std::uint64_t id, std::uint64_t time) noexcept {
+        if (auto info = get_simple_info_by_id(id)) {
             info->logon_time = time;
             return true;
         }
         return false;
     }
 
-    bool SimpleManager::setLogoffTime(std::uint64_t id, std::uint64_t time) noexcept {
-        if (auto info = getSimpleInfoById(id)) {
+    bool SimpleManager::set_logoff_time(std::uint64_t id, std::uint64_t time) noexcept {
+        if (auto info = get_simple_info_by_id(id)) {
             info->logoff_time = time;
             return true;
         }
         return false;
     }
 
-    bool SimpleManager::setVipLevel(std::uint64_t id, std::uint32_t vipLevel) noexcept {
-        if (auto info = getSimpleInfoById(id)) {
+    bool SimpleManager::set_vip_level(std::uint64_t id, std::uint32_t vipLevel) noexcept {
+        if (auto info = get_simple_info_by_id(id)) {
             info->vip_level = vipLevel;
             return true;
         }
         return false;
     }
 
-    bool SimpleManager::setGuildId(std::uint64_t id, std::uint64_t guildId) noexcept {
-        if (auto info = getSimpleInfoById(id)) {
+    bool SimpleManager::set_guild_id(std::uint64_t id, std::uint64_t guildId) noexcept {
+        if (auto info = get_simple_info_by_id(id)) {
             info->guild_id = guildId;
             return true;
         }
         return false;
     }
 
-    bool SimpleManager::setRoleDeleted(std::uint64_t id, bool deleted) noexcept {
-        if (auto info = getSimpleInfoById(id)) {
+    bool SimpleManager::set_role_deleted(std::uint64_t id, bool deleted) noexcept {
+        if (auto info = get_simple_info_by_id(id)) {
             info->is_deleted = deleted;
             return true;
         }
         return false;
     }
 
-    bool SimpleManager::checkNameExist(std::string_view name) const noexcept {
+    bool SimpleManager::check_name_exist(std::string_view name) const noexcept {
         return name_to_id_.contains(std::string(name));
     }
 
-    bool SimpleManager::checkNameFormat(std::string_view name) const noexcept {
+    bool SimpleManager::check_name_format(std::string_view name) const noexcept {
         if (name.size() < 4 || name.size() > 20)
             return false;
         constexpr std::string_view invalid_chars = ",;'\" \\%%\r\n";
         return name.find_first_of(invalid_chars) == std::string_view::npos;
     }
 
-    std::uint64_t SimpleManager::getGuildId(std::uint64_t id) const noexcept {
-        if (auto info = instance().getSimpleInfoById(id))
+    std::uint64_t SimpleManager::get_guild_id(std::uint64_t id) const noexcept {
+        if (auto info = instance().get_simple_info_by_id(id))
             return info->guild_id;
         return 0;
     }
 
-    std::uint32_t SimpleManager::getTotalCount() const noexcept {
+    std::uint32_t SimpleManager::get_total_count() const noexcept {
         return static_cast<std::uint32_t>(id_to_info_.size());
     }
 
-    bool SimpleManager::getRoleIdsByAccountId(std::uint64_t accountId, std::vector<std::uint64_t> &roleIds) const {
+    bool SimpleManager::get_role_ids_by_account_id(std::uint64_t accountId, std::vector<std::uint64_t> &roleIds) const {
         roleIds.clear();
         for (const auto &[id, info]: id_to_info_) {
             if (info && info->account_id == accountId)
@@ -164,7 +164,7 @@ namespace cfl {
         return true;
     }
 
-    SimpleInfo *SimpleManager::createSimpleInfo(std::uint64_t roleId,
+    SimpleInfo *SimpleManager::create_simple_info(std::uint64_t roleId,
                                                 std::uint64_t accountId,
                                                 std::string_view name,
                                                 std::uint32_t careerId) {
@@ -184,7 +184,7 @@ namespace cfl {
         return raw_ptr;
     }
 
-    bool SimpleManager::addSimpleInfo(std::unique_ptr<SimpleInfo> info) {
+    bool SimpleManager::add_simple_info(std::unique_ptr<SimpleInfo> info) {
         if (!info) return false;
 
         auto roleId = info->role_id;

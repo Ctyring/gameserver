@@ -93,6 +93,7 @@ set(PROTO_FILES
         ${CMAKE_SOURCE_DIR}/cfl/protos/login.proto
         ${CMAKE_SOURCE_DIR}/cfl/protos/game.proto
         ${CMAKE_SOURCE_DIR}/cfl/protos/define.proto
+        ${CMAKE_SOURCE_DIR}/cfl/protos/msg.proto
 )
 set(PROTO_OUT_PUT_PATH ${CMAKE_SOURCE_DIR}/cfl/protos/gen_proto)
 # 自动调用 protoc 生成
@@ -140,6 +141,9 @@ set(LIB_SRC
         cfl/modules/role_module.cc
         cfl/static_data.cc
         cfl/simple_manager.cc
+        cfl/mail/mail_manager.cc
+        cfl/modules/mail_module.cc
+        cfl/global_data_manager.cc
         ${GENERATED_SRC}
 )
 
@@ -183,7 +187,7 @@ set(TEST_TARGETS
         test_role_creator test_role_attacher
         test_sqlite3 test_handler test_proto test_connection
         test_net_engine test_role_module test_static_data
-        test_simple_manager
+        test_simple_manager test_mail
 )
 
 foreach (target_name IN LISTS TEST_TARGETS)

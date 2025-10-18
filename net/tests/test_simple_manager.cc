@@ -10,11 +10,11 @@ void test_load_data()
     std::cout << "[Test] Loading data from database...\n";
     auto &mgr = SimpleManager::instance();
 
-    bool ok = mgr.loadData();
+    bool ok = mgr.load_data();
     assert(ok && "loadData() should return true");
 
-    std::cout << "Total loaded records: " << mgr.getTotalCount() << "\n";
-    assert(mgr.getTotalCount() > 0);
+    std::cout << "Total loaded records: " << mgr.get_total_count() << "\n";
+    assert(mgr.get_total_count() > 0);
 }
 
 void test_create_and_modify()
@@ -28,35 +28,35 @@ void test_create_and_modify()
     const uint32_t career = 2;
 
     // 创建角色
-    SimpleInfo *info = mgr.createSimpleInfo(roleId, accountId, name, career);
+    SimpleInfo *info = mgr.create_simple_info(roleId, accountId, name, career);
     assert(info != nullptr);
     assert(info->name == name);
 
     // 测试 getSimpleInfoById
-    SimpleInfo *found = mgr.getSimpleInfoById(roleId);
+    SimpleInfo *found = mgr.get_simple_info_by_id(roleId);
     assert(found != nullptr);
     assert(found->role_id == roleId);
 
     // 测试 setFightValue / getFightValue
-    mgr.setFightValue(roleId, 987654, 15);
-    assert(mgr.getFightValue(roleId) == 987654);
+    mgr.set_fight_value(roleId, 987654, 15);
+    assert(mgr.get_fight_value(roleId) == 987654);
     assert(found->level == 15);
 
     // 测试 setName / getRoleIdByName
-    mgr.setName(roleId, "RenamedHero");
-    assert(mgr.getRoleIdByName("RenamedHero") == roleId);
-    assert(!mgr.checkNameExist("TestHero")); // 旧名应被移除
+    mgr.set_name(roleId, "RenamedHero");
+    assert(mgr.get_role_id_by_name("RenamedHero") == roleId);
+        assert(!mgr.check_name_exist("TestHero")); // 旧名应被移除
 
     // 测试 setGuildId
-    mgr.setGuildId(roleId, 555);
-    assert(mgr.getGuildId(roleId) == 555);
+    mgr.set_guild_id(roleId, 555);
+    assert(mgr.get_guild_id(roleId) == 555);
 
     // 测试 VIP 等级修改
-    mgr.setVipLevel(roleId, 7);
+    mgr.set_vip_level(roleId, 7);
     assert(found->vip_level == 7);
 
     // 测试删除标志
-    mgr.setRoleDeleted(roleId, true);
+    mgr.set_role_deleted(roleId, true);
     assert(found->is_deleted == true);
 
     std::cout << "Role " << found->name << " modified successfully.\n";
@@ -68,18 +68,18 @@ void test_check_functions()
     auto &mgr = SimpleManager::instance();
 
     // 名字检测
-    assert(!mgr.checkNameFormat("a!"));            // 太短
-    assert(!mgr.checkNameFormat("ThisNameIsTooLongForTheGameCharacter")); // 太长
-    assert(!mgr.checkNameFormat("bad,name"));      // 含非法字符
-    assert(mgr.checkNameFormat("GoodName"));       // 合法
+    assert(!mgr.check_name_format("a!"));            // 太短
+    assert(!mgr.check_name_format("ThisNameIsTooLongForTheGameCharacter")); // 太长
+    assert(!mgr.check_name_format("bad,name"));      // 含非法字符
+    assert(mgr.check_name_format("GoodName"));       // 合法
 
     // 检测角色名存在
-    assert(mgr.checkNameExist("RenamedHero"));
-    assert(!mgr.checkNameExist("NoSuchName"));
+    assert(mgr.check_name_exist("RenamedHero"));
+    assert(!mgr.check_name_exist("NoSuchName"));
 
     // 测试通过账号 ID 获取角色
     std::vector<uint64_t> roleIds;
-    mgr.getRoleIdsByAccountId(12345, roleIds);
+    mgr.get_role_ids_by_account_id(12345, roleIds);
     assert(!roleIds.empty());
     std::cout << "Account 12345 owns " << roleIds.size() << " roles.\n";
 }

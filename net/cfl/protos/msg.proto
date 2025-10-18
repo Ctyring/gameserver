@@ -1,0 +1,289 @@
+syntax = "proto3";
+
+//============================================================================================
+// 消息枚举定义：MessageID
+//============================================================================================
+//
+// 说明：
+//   本文件定义了游戏服务端各模块之间、以及客户端与服务器之间的
+//   消息 ID（MessageID），用于消息分发和网络通信识别。
+//   按照逻辑划分为以下几大类：
+//     1. 一般消息（客户端 <-> 登录/数据库/中心服务器等）
+//     2. LogicSvr 消息（客户端 <-> 逻辑服）
+//     3. SceneSvr 消息（客户端 <-> 场景服）
+//
+//   命名规范：
+//     MSG_XXX_REQ  — 请求(Request)
+//     MSG_XXX_ACK  — 应答(Ack / Response)
+//     MSG_XXX_NTY  — 通知(Notify)
+//
+//============================================================================================
+
+enum MessageID {
+
+    MSG_BEGIN = 0;   // 保留起始标志，未使用
+
+    //============================================================================================
+    // 一般消息定义（General Messages）
+    //============================================================================================
+    MSG_NORMAL_MSGID_BEGIN = 100000;
+
+    // ---------------- 系统与登录模块 ----------------
+    MSG_CHECK_VERSION_REQ  = 100001;    // 客户端请求：校验游戏版本
+    MSG_CHECK_VERSION_ACK  = 100002;    // 服务器返回：版本验证结果
+
+    MSG_ACCOUNT_REG_REQ    = 100003;    // 客户端请求：注册账号
+    MSG_ACCOUNT_REG_ACK    = 100004;    // 服务器返回：注册结果
+
+    MSG_ACCOUNT_LOGIN_REQ  = 100005;    // 客户端请求：账号登录
+    MSG_ACCOUNT_LOGIN_ACK  = 100006;    // 服务器返回：登录结果
+
+    // ---------------- 数据库操作 ----------------
+    MSG_DB_EXE_SQL_REQ     = 100007;    // 调试/管理命令：执行任意SQL请求
+    MSG_DB_EXE_SQL_ACK     = 100008;    // SQL执行返回结果（仅内部使用）
+
+    // ---------------- 登录服务器交互 ----------------
+    MSG_SERVER_LIST_REQ    = 100009;    // 客户端请求：获取服务器列表
+    MSG_SERVER_LIST_ACK    = 100010;    // 返回服务器列表
+
+    MSG_SELECT_SERVER_REQ  = 100011;    // 客户端选择登录的游戏服务器
+    MSG_SELECT_SERVER_ACK  = 100012;    // 返回服务器选择结果（例如分配Token）
+
+    // ---------------- 服务器间注册 ----------------
+    MSG_LOGIC_REGTO_LOGIN_REQ  = 100013; // 逻辑服注册到登录服
+    MSG_LOGIC_REGTO_LOGIN_ACK  = 100014; // 登录服确认注册
+
+    MSG_LOGIC_UPDATE_REQ       = 100015; // 逻辑服状态更新请求（负载等）
+    MSG_LOGIC_UPDATE_ACK       = 100016; // 登录服更新响应
+
+    MSG_GAME_REGTO_LOGIC_REQ   = 100017; // 游戏服注册到逻辑服
+    MSG_GAME_REGTO_LOGIC_ACK   = 100018; // 注册结果返回
+
+    MSG_LOGIC_REGTO_CENTER_REQ = 100019; // 逻辑服注册到中心服
+    MSG_LOGIC_REGTO_CENTER_ACK = 100020; // 注册结果
+
+    MSG_LOG_DATA_NTF           = 100021; // 日志服：收集日志通知
+
+    // ---------------- GM / 管理工具接口 ----------------
+    MSG_PHP_GM_COMMAND_REQ     = 100022; // PHP/GM发起命令请求
+    MSG_PHP_GM_COMMAND_ACK     = 100023; // 执行命令返回结果
+
+    // ---------------- 运维监控 ----------------
+    MSG_WATCH_HEART_BEAT_REQ   = 100024; // 监控心跳请求（WatchDog）
+    MSG_WATCH_HEART_BEAT_ACK   = 100025; // 心跳应答
+
+    MSG_REMOVE_CONNECT_NTY     = 100026; // 通知：移除连接（通常由登录服或中心服发出）
+    MSG_DISCONNECT_NTY         = 100027; // 通知：客户端断开连接
+
+    MSG_NETWORK_STATUS_NTY     = 100028; // 客户端网络状态变更（如弱网、断线）
+
+    MSG_LOGIC_REGTO_DBSVR_REQ  = 100031; // 逻辑服注册到数据库服
+    MSG_LOGIC_REGTO_DBSVR_ACK  = 100032; // 数据库服返回注册确认
+
+    MSG_SET_LAST_SERVER_NTY    = 100033; // 通知客户端最近登录服务器
+
+    MSG_GM_SHUTDOWN_SVR_REQ    = 100035; // GM命令：关闭服务器请求
+    MSG_GM_SHUTDOWN_SVR_ACK    = 100036; // 返回关闭结果
+
+    MSG_UDP_CONNECT_REQ        = 100037; // 客户端 UDP 握手请求
+    MSG_UDP_CONNECT_ACK        = 100038; // UDP 握手确认
+
+    MSG_SEAL_ACCOUNT_REQ       = 100039; // GM命令：封禁账号
+    MSG_SEAL_ACCOUNT_ACK       = 100040; // 封禁结果返回
+
+    MSG_DB_WRITE_ERROR_NTY     = 100041; // 通知：数据库写入错误
+
+    MSG_SEAL_ACCOUNT_NTY       = 100042; // 通知客户端账号被封禁
+
+    MSG_GAME_PARAM_REQ         = 100043; // 客户端请求游戏参数（配置/公告等）
+    MSG_GAME_PARAM_ACK         = 100044; // 返回参数数据
+
+    MSG_NORMAL_MSGID_END       = 199999; // 一般消息结束标志
+
+    //============================================================================================
+    // 客户端 <==> 逻辑服务器 (Logic Server)
+    //============================================================================================
+    MSG_LOGICSVR_MSGID_BEGIN   = 200000;
+
+    // ---------------- 角色创建与登录 ----------------
+    MSG_ROLE_LIST_REQ          = 200001; // 请求角色列表
+    MSG_ROLE_LIST_ACK          = 200002; // 返回角色列表
+
+    MSG_ROLE_CREATE_REQ        = 200003; // 创建角色
+    MSG_ROLE_CREATE_ACK        = 200004; // 创建角色返回
+
+    MSG_ROLE_DELETE_REQ        = 200005; // 删除角色
+    MSG_ROLE_DELETE_ACK        = 200006; // 删除角色返回
+
+    MSG_ROLE_LOGIN_REQ         = 200007; // 角色登录游戏
+    MSG_ROLE_LOGIN_ACK         = 200008; // 登录返回（包含角色数据）
+
+    MSG_ROLE_LOGOUT_REQ        = 200009; // 角色登出请求
+    MSG_ROLE_LOGOUT_ACK        = 200010; // 登出确认
+
+    MSG_RECV_GIFTCODE_REQ      = 200011; // 领取礼包码
+    MSG_RECV_GIFTCODE_ACK      = 200012; // 礼包码返回结果
+
+    MSG_NOTIFY_INTO_SCENE      = 200014; // 通知：进入场景（客户端跳转）
+
+    MSG_COPYINFO_REPORT_REQ    = 200016; // 上报副本信息（如完成、统计）
+    MSG_MAIN_COPY_REQ          = 200017; // 请求进入主线副本
+    MSG_MAIN_COPY_ACK          = 200018; // 副本进入结果
+    MSG_ABORT_SCENE_NTF        = 200019; // 离开副本通知（逻辑服发出）
+    MSG_CLIENT_LOG_REQ         = 200020; // 客户端上传日志
+
+    MSG_BACK_TO_CITY_REQ       = 200021; // 请求返回主城
+    MSG_BACK_TO_CITY_ACK       = 200022; // 返回主城确认
+
+    MSG_BATTLE_RESULT_NTY      = 200023; // 战斗结果通知（Scene->Logic）
+
+    MSG_MAINCOPY_RESULT_NTY    = 200024; // 主线副本结果通知（Logic->Client）
+
+    // ---------------- 属性与系统变更通知 ----------------
+    MSG_ROLE_CHANG_NTY         = 200025; // 角色属性变化
+    MSG_BAG_CHANGE_NTY         = 200026; // 背包变化
+    MSG_PET_CHANGE_NTY         = 200027; // 宠物变化
+    MSG_EQUIP_CHANGE_NTY       = 200028; // 装备变化
+    MSG_PARTNER_CHANGE_NTY     = 200029; // 伙伴变化
+    MSG_MOUNT_CHANGE_NTY       = 200030; // 坐骑变化
+
+    MSG_ROLE_OTHER_LOGIN_NTY   = 200031; // 通知：账号在其他地方登录
+
+    // ---------------- 聊天系统 ----------------
+    MSG_CHAT_MESSAGE_REQ       = 200032; // 发送聊天消息
+    MSG_CHAT_MESSAGE_ACK       = 200033; // 聊天发送结果
+    MSG_CHAT_MESSAGE_NTY       = 200034; // 接收聊天广播/私聊消息
+
+    // ---------------- 装备系统 ----------------
+    MSG_SETUP_EQUIP_REQ        = 200035; // 穿装备请求
+    MSG_SETUP_EQUIP_ACK        = 200036; // 穿装备结果
+    MSG_UNSET_EQUIP_REQ        = 200037; // 卸装备请求
+    MSG_UNSET_EQUIP_ACK        = 200038; // 卸装备结果
+
+    // ---------------- 宠物/伙伴/坐骑 系统 ----------------
+    MSG_SETUP_PET_REQ          = 200039;
+    MSG_SETUP_PET_ACK          = 200040;
+    MSG_UNSET_PET_REQ          = 200041;
+    MSG_UNSET_PET_ACK          = 200042;
+    MSG_SETUP_PARTNER_REQ      = 200043;
+    MSG_SETUP_PARTNER_ACK      = 200044;
+    MSG_UNSET_PARTNER_REQ      = 200045;
+    MSG_UNSET_PARTNER_ACK      = 200046;
+    MSG_SETUP_MOUNT_REQ        = 200047;
+    MSG_SETUP_MOUNT_ACK        = 200048;
+    MSG_UNSET_MOUNT_REQ        = 200049;
+    MSG_UNSET_MOUNT_ACK        = 200050;
+
+    // ---------------- 道具/宝石系统 ----------------
+    MSG_USE_ITEM_REQ           = 200051; // 使用物品请求
+    MSG_USE_ITEM_ACK           = 200052; // 使用结果
+    MSG_SETUP_GEM_REQ          = 200053; // 镶嵌宝石请求
+    MSG_SETUP_GEM_ACK          = 200054; // 镶嵌结果
+    MSG_UNSET_GEM_REQ          = 200055; // 拆卸宝石请求
+    MSG_UNSET_GEM_ACK          = 200056; // 拆卸结果
+
+    // ---------------- 断线重连 ----------------
+    MSG_ROLE_RECONNECT_REQ     = 200057;
+    MSG_ROLE_RECONNECT_ACK     = 200058;
+
+    // ---------------- 系统状态变更 ----------------
+    MSG_MAIL_CHANGE_NTY        = 200059; // 邮件变更
+    MSG_TASK_CHANGE_NTY        = 200060; // 任务变更
+
+    MSG_BROAD_MESSAGE_NOTIFY   = 200061; // 全服广播（系统消息）
+    MSG_GASVR_REGTO_PROXY_REQ  = 200062; // 游戏服注册到代理服
+    MSG_GASVR_REGTO_PROXY_ACK  = 200063;
+
+    // ---------------- 商城与充值 ----------------
+    MSG_STORE_BUY_REQ          = 200064; // 商城购买请求
+    MSG_STORE_BUY_ACK          = 200065; // 购买结果
+    MSG_GEM_CHANGE_NTY         = 200066; // 宝石变化通知
+
+    MSG_RANDOM_NAME_REQ        = 200067; // 请求随机角色名
+    MSG_RANDOM_NAME_ACK        = 200068; // 随机名返回
+
+    MSG_ROLE_REBORN_REQ        = 200069; // 角色复活请求
+    MSG_ROLE_REBORN_ACK        = 200070; // 复活结果
+
+    // ---------------- 组队/多人副本 ----------------
+    MSG_CREATE_ROOM_REQ        = 200071; // 创建房间
+    MSG_CREATE_ROOM_ACK        = 200072;
+    MSG_JOIN_ROOM_REQ          = 200073; // 加入房间
+    MSG_JOIN_ROOM_ACK          = 200074;
+    MSG_KICK_ROOM_REQ          = 200075; // 踢出房间
+    MSG_KICK_ROOM_ACK          = 200076;
+    MSG_LEAVE_ROOM_REQ         = 200077; // 离开房间
+    MSG_LEAVE_ROOM_ACK         = 200078;
+    MSG_START_ROOM_REQ         = 200079; // 开始战斗
+    MSG_START_ROOM_ACK         = 200080;
+    MSG_BROAD_ROOM_NOTIFY      = 200081; // 房间广播（玩家加入/离开等）
+    MSG_CREATE_PAYMENT_REQ     = 200082; // 创建充值订单
+    MSG_CREATE_PAYMENT_ACK     = 200083; // 返回订单结果
+
+    MSG_TEST_ADD_ITEM          = 299998; // 调试用：添加物品
+    MSG_LOGICSVR_MSGID_END     = 299999; // LogicSvr 消息结束
+
+    //============================================================================================
+    // 客户端 <==> 场景服务器 (Scene Server)
+    //============================================================================================
+    MSG_SCENESVR_MSGID_BEGIN   = 300000;
+
+    // ---------------- 场景生命周期 ----------------
+    MSG_CREATE_SCENE_REQ       = 300001; // 请求创建场景实例
+    MSG_CREATE_SCENE_ACK       = 300002;
+    MSG_DELETE_SCENE_REQ       = 300003; // 请求销毁场景
+    MSG_DELETE_SCENE_ACK       = 300004;
+    MSG_SCENE_DESTROY_REQ      = 300005; // 通知销毁
+    MSG_SCENE_DESTROY_ACK      = 300006;
+
+    // ---------------- 数据传输 ----------------
+    MSG_TRANSFER_DATA_REQ      = 300007; // 数据传输（跨服/副本）
+    MSG_TRANSFER_DATA_ACK      = 300008;
+
+    // ---------------- 场景进入/离开 ----------------
+    MSG_NOTIFY_ROLE_ENTER_REQ  = 300009; // 通知玩家进入场景
+    MSG_NOTIFY_ROLE_ENTER_ACK  = 300010;
+    MSG_ENTER_SCENE_REQ        = 300011; // 客户端请求进入场景
+    MSG_ENTER_SCENE_ACK        = 300012; // 服务器返回进入场景数据
+    MSG_LEAVE_SCENE_REQ        = 300013; // 离开场景
+    MSG_LEAVE_SCENE_ACK        = 300014;
+    MSG_ABORT_SCENE_REQ        = 300015; // 强制中断场景（如掉线）
+    MSG_ABORT_SCENE_ACK        = 300016;
+
+    // ---------------- 战斗与技能 ----------------
+    MSG_SKILL_CAST_REQ         = 300017; // 施放技能请求
+    MSG_SKILL_CAST_ACK         = 300018; // 技能施放结果
+    MSG_SKILL_CAST_NTF         = 300019; // 通知其他玩家技能释放
+    MSG_SKILL_RESULT_NTF       = 300020; // 技能伤害结果通知
+
+    // ---------------- 对象同步 ----------------
+    MSG_OBJECT_NEW_NTF         = 300021; // 场景中新对象出现（玩家/怪物）
+    MSG_OBJECT_CHANGE_NTF      = 300022; // 对象属性变化
+    MSG_OBJECT_REMOVE_NTF      = 300023; // 对象移除
+
+    MSG_OBJECT_ACTION_REQ      = 300024; // 行为请求（移动、攻击）
+    MSG_OBJECT_ACTION_ACK      = 300025; // 行为确认
+
+    // ---------------- 心跳与战斗消耗 ----------------
+    MSG_HEART_BEAT_REQ         = 300026; // 心跳包
+    MSG_HEART_BEAT_ACK         = 300027; // 心跳返回
+    MSG_USE_HP_BOOTTLE_REQ     = 300028; // 使用血瓶
+    MSG_USE_HP_BOOTTLE_ACK     = 300029;
+    MSG_USE_MP_BOOTTLE_REQ     = 300030; // 使用蓝瓶
+    MSG_USE_MP_BOOTTLE_ACK     = 300031;
+
+    MSG_OBJECT_DIE_NOTIFY      = 300032; // 对象死亡通知
+    MSG_BATTLE_CHAT_REQ        = 300033; // 战斗中聊天
+    MSG_BATTLE_CHAT_ACK        = 300034;
+    MSG_BULLET_NEW_NTF         = 300035; // 投射物创建通知
+
+    // ---------------- 坐骑与特效 ----------------
+    MSG_SWITCH_MOUNT_REQ       = 300036; // 切换坐骑
+    MSG_SWITCH_MOUNT_ACK       = 300037;
+    MSG_PLAYER_CHAGE_NTF       = 300038; // 玩家属性变化通知（应为CHANGE）
+    MSG_ACTOR_HITEFFECT_NTF    = 300039; // 角色被击特效通知
+    MSG_MOUNT_RIDING_REQ       = 300040; // 坐骑骑乘请求
+    MSG_MOUNT_RIDING_ACK       = 300041; // 坐骑骑乘确认
+
+    MSG_SCENESVR_MSGID_END     = 399999; // SceneSvr 消息结束
+}
